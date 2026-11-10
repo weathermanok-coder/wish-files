@@ -229,7 +229,7 @@ function svg(markup,cls){var d=document.createElement("div");d.innerHTML=markup;
 function clean(v){return String(v==null?"":v).trim();}
 
 /* ---------- Data the form asks for. The grown-up board reads these same labels. ---------- */
-var CH=[{name:"You",bg:"#2B35E8"},{name:"Favorites",bg:"#B81D62"},{name:"Your stuff",bg:"#0A6E60"},{name:"Wishes",bg:"#C2410C"}];
+var CH=[{name:"You",bg:"#2B35E8"},{name:"Favorites",bg:"#B81D62"},{name:"Your stuff",bg:"#0A6E60"},{name:"Christmas",full:"What do you want for Christmas?",bg:"#C2410C"}];
 var STEPS=[
  {id:"about",ch:0,title:"Who are you?",sub:"Skip anything you want. Every answer helps.",group:"about",fields:[
    {k:"age",label:"How old are you?",type:"chips",options:["7","8","9","10","11","12","13"]},
@@ -294,7 +294,7 @@ var STEPS=[
    {k:"saving",label:"I'm saving up for...",type:"area",ph:"The big thing you've been dreaming about"},
    {k:"wait",label:"My grown-ups said I have to wait for...",type:"area",ph:"Things you're not old enough for yet"},
    {k:"bestGift",label:"Best gift you ever got"},{k:"neverUsed",label:"A gift you never really used"}]},
- {id:"wishes",ch:3,type:"wishes",title:"Your wishes",sub:"Start with your top 3, then add as many more as you like. Color, size, version and where to find it all help."},
+ {id:"wishes",ch:3,type:"wishes",title:"What do you want for Christmas?",sub:"Start with your top 3, then add as many more as you like. Color, size, version and where to find it all help."},
  {id:"tt",ch:3,type:"tt",title:"This or that?",sub:"Tap one in each row."},
  {id:"extras",ch:3,title:"Bonus round",group:"extras",fields:[
    {k:"funDay",label:"A fun day you'd love with an Aunt, Uncle, Opa or Nana",type:"area",ph:"Movie, bowling, baking, a game night"},
@@ -487,7 +487,7 @@ function go(n){
   if(from.ch!==to.ch&&dir>0&&!calm){
     var w=document.getElementById("wipe");
     clear(w);w.style.background=CH[to.ch].bg;
-    w.appendChild(h("div",{},h("p",{text:"Chapter "+(to.ch+1)+" of 4"}),h("h2",{text:CH[to.ch].name}),svg(STAR),h("p",{class:"msg",text:cheer(to.ch)})));
+    w.appendChild(h("div",{},h("p",{text:"Chapter "+(to.ch+1)+" of 4"}),h("h2",{text:CH[to.ch].full||CH[to.ch].name,style:CH[to.ch].full?"font-size:clamp(38px,11vw,72px)":null}),svg(STAR),h("p",{class:"msg",text:cheer(to.ch)})));
     w.className="run";S.busy=true;
     setTimeout(function(){S.i=n;render(dir);},380);
     setTimeout(function(){w.className="";S.busy=false;},1920);
@@ -496,7 +496,7 @@ function go(n){
 var CHEERS={
   1:["Nice work, {who}! The elves are taking notes.","Great start, {who}. Now for the good stuff.","{who}, you're a natural at this."],
   2:["Halfway there. Your file is getting good!","{who}, this file is getting seriously good.","Keep going! Everyone's going to love reading this."],
-  3:["Last chapter. Save the best wishes for here!","Final chapter, {who}. Make those wishes specific!","Almost done! This is the part everyone reads first."]
+  3:["Last chapter. Save the best for here!","Final chapter, {who}. Be super specific about what you want!","Almost done! This is the part everyone reads first."]
 };
 function cheer(ch){
   var who=clean(P.about&&P.about.codeName)||S.name||"Agent";
@@ -645,13 +645,13 @@ function wishes(pane){
   var list=h("div",{class:"wishlist"});
   function add(i){
     var row=h("div",{class:"wish"+(i>3?" extra":"")},h("div",{class:"num",text:String(i)}),
-      fieldEl("wishes",{k:"w"+i,label:i===1?"Your #1 wish, if you only got one thing":i<=3?"Wish "+i:"Bonus wish"}),
+      fieldEl("wishes",{k:"w"+i,label:i===1?"The #1 thing you want, if you only got one":i<=3?"Thing you want #"+i:"Another thing you want"}),
       fieldEl("wishes",{k:"d"+i,label:"Exact details",type:"area",ph:"Color, size, version, where to find it"}));
     list.appendChild(row);return row;
   }
   for(var i=1;i<=slots;i++)add(i);
   pane.appendChild(list);
-  var more=h("button",{class:"btn",type:"button",text:"Add another wish",on:{click:function(){
+  var more=h("button",{class:"btn",type:"button",text:"Add another thing",on:{click:function(){
     slots++;S.wishSlots=slots;var r=add(slots);
     try{r.querySelector("input").focus({preventScroll:true});}catch(_){}
     r.scrollIntoView({behavior:calm?"auto":"smooth",block:"center"});
@@ -699,8 +699,8 @@ function drawing(pane){
 function send(pane){
   var err=h("div",{class:"err hidden",role:"alert"});
   var wishesN=wishNums(P).length;
-  pane.appendChild(h("p",{class:"lead",text:wishesN?("You listed "+wishesN+" wish"+(wishesN>1?"es":"")+"."):"You haven't listed any wishes yet. Your Aunts, Uncles, Opa and Nana will want those."}));
-  if(!wishesN)pane.appendChild(h("button",{class:"btn",type:"button",text:"Add my wishes",on:{click:function(){go(STEPS.map(function(x){return x.id;}).indexOf("wishes"));}}}));
+  pane.appendChild(h("p",{class:"lead",text:wishesN?("You listed "+wishesN+" thing"+(wishesN>1?"s":"")+" you want for Christmas."):"You haven't said what you want for Christmas yet. Your Aunts, Uncles, Opa and Nana will want to know."}));
+  if(!wishesN)pane.appendChild(h("button",{class:"btn",type:"button",text:"Add what I want",on:{click:function(){go(STEPS.map(function(x){return x.id;}).indexOf("wishes"));}}}));
   var b=h("button",{class:"btn go",type:"button",text:"Send my file",on:{click:function(){
     b.disabled=true;b.textContent="Sending";err.classList.add("hidden");
     clearTimeout(timer);P.submitted=true;
@@ -761,7 +761,7 @@ function board(){
     var p=k.profile,total=wishNums(p).length,taken=k.adult.claims.filter(function(c){return /^w\d+$/.test(c.item)&&p.wishes&&clean(p.wishes[c.item]);}).length;
     wrap.appendChild(h("button",{class:"kidrow",type:"button",on:{click:function(){detail(k.key);}}},
       h("span",{class:"dot",style:"background:"+colorOf(p)}),
-      h("span",{},h("strong",{text:p.name}),h("small",{text:(p.about&&p.about.age?"Age "+p.about.age+". ":"")+taken+" of "+total+" wishes claimed"})),
+      h("span",{},h("strong",{text:p.name}),h("small",{text:(p.about&&p.about.age?"Age "+p.about.age+". ":"")+taken+" of "+total+" gifts claimed"})),
       h("span",{class:"pill"+(p.submitted?" done":""),text:p.submitted?"Sent":"Working on it"})));
   });
 }
@@ -785,10 +785,10 @@ function detail(key){
   if(A.flash){toast.textContent=A.flash;toast.classList.remove("hidden");A.flash="";}
   board_.appendChild(toast);
 
-  var w=section("Wishes"),any=false;
+  var w=section("Christmas list"),any=false;
   wishNums(p).forEach(function(n,ix){var t=clean(p.wishes["w"+n]);any=true;
     w.appendChild(h("div",{class:"gift"},h("div",{class:"t",text:(ix+1)+". "+t}),clean(p.wishes["d"+n])?h("div",{class:"d",text:p.wishes["d"+n]}):null,dib("w"+n,t)));});
-  if(!any)w.appendChild(h("p",{class:"savemsg",text:"No wishes listed yet."}));
+  if(!any)w.appendChild(h("p",{class:"savemsg",text:"Nothing on the list yet."}));
   board_.appendChild(w);
 
   var wants=Object.keys(p.have||{}).filter(function(i){return p.have[i].want;});
