@@ -324,7 +324,7 @@ var mock=live?null:(function(){
    juniper:{name:"Juniper",submitted:true,updatedAt:Date.now(),about:{age:"9",codeName:"Agent Panda",threeWords:"loud, kind, sneaky",dreamJob:"Zookeeper"},fun:{superpower:"Talk to animals",snowDay:"Sledding",sidekick:"A red panda named Rusty",hundred:"Fancy markers and a hamster tunnel"},vibe:{roomVibe:"Jungle treehouse",shelves:"Some",saturday:"Building forts with my brother"},sizes:{shirt:"10/12",pants:"10 slim",shoes:"3 youth",hoodie:"M",clothes:"Only fun ones"},interests:["Building","Animals","Art & crafts","Magic tricks"],colors:{fav:"Teal",second:"Orange",nope:"Brown"},books:{series:"Sample Dragon Academy",bookNum:"4",author:"Sample Author"},treats:{candy:"Sour gummy worms",candyNo:"Black licorice",sweetSalty:"Both!",drink:"Hot cocoa",avoid:"Peanuts"},games:{video:"Sample Farm Quest",system:"Tablet",board:"Sample Card Battle"},animals:{animal:"Red panda",pets:"Biscuit (hamster)",petWish:"A real red panda"},have:{Tablet:{has:true,kind:""},Bike:{has:true,want:true,kind:"Teal, 24 inch"},"Art supplies kit":{want:true,kind:"Alcohol markers"}},stash:{collect:"Enamel pins, missing the axolotl",lots:"Stuffed animals",almostOut:"Sketchbooks"},limits:{saving:"A telescope",wait:"A phone",bestGift:"Rock tumbler",x:""},wishes:{w1:"Rock tumbler refill kit",d1:"Any brand with polishing grit, 3 lb",w2:"Red panda hoodie",d2:"Size M, zip front",w3:"Magic trick set",w4:"Glow-in-the-dark stars",d4:"The kind that stick to the ceiling"},tt:{"0":"Build it myself","1":"Outside fun","4":"Surprise me"},extras:{funDay:"Bowling and tacos",giftCard:"Bookstore",kindness:"A cozy blanket for my grandpa"}},
    theo:{name:"Theo",submitted:false,updatedAt:Date.now(),about:{age:"12"},sizes:{shirt:"Adult S",shoes:"7"},interests:["Video games","Robots & coding","Sports"],colors:{fav:"Black"},games:{video:"Sample Space Racer",system:"PC"},have:{Headphones:{want:true,kind:"Wireless, black"}},wishes:{w1:"Mechanical keyboard",d1:"Compact, quiet switches"}}
   };
-  var draws={},adult={juniper:{notes:{bought:"Rock tumbler is covered",reach:"Text Dee"},claims:[{id:"c1",who:"Uncle Ray",item:"w2",what:"Red panda hoodie"}]},theo:{notes:{},claims:[]}};
+  var draws={},adult={juniper:{notes:{bought:"Rock tumbler is covered"},claims:[{id:"c1",who:"Uncle Ray",item:"w2",what:"Red panda hoodie"}]},theo:{notes:{},claims:[]}};
   function key(n){return clean(n).toLowerCase().replace(/\s+/g," ");}
   function wait(v){return new Promise(function(r){setTimeout(function(){r(v);},180);});}
   return {
@@ -835,7 +835,7 @@ function detail(key){
   var notes=section("Notes from parents");
   notes.appendChild(h("p",{class:"savemsg",text:"Only grown-ups see this."}));
   var boxes={};
-  [["skip","Please skip"],["bought","Already bought by us"],["sizes","Size notes"],["reach","Best way to reach us"]].forEach(function(r){
+  [["skip","Please skip"],["bought","Already bought by us"],["sizes","Size notes"]].forEach(function(r){
     var id=nid();boxes[r[0]]=h("textarea",{id:id,maxlength:"800"});boxes[r[0]].value=N[r[0]]||"";
     notes.appendChild(h("div",{class:"adultfield"},h("label",{for:id,text:r[1]}),boxes[r[0]]));
   });
