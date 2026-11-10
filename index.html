@@ -120,11 +120,15 @@ textarea.in-box{min-height:92px;resize:vertical}
 
 /* Chapter wipe */
 #wipe{position:fixed;inset:0;z-index:5;display:none;place-items:center;text-align:center;padding:24px;color:var(--snow)}
-#wipe.run{display:grid;animation:wipe 1.25s cubic-bezier(.7,0,.3,1) forwards}
+#wipe.run{display:grid;animation:wipe 1.9s cubic-bezier(.7,0,.3,1) forwards}
 #wipe h2{font-size:clamp(46px,14vw,92px)}
 #wipe p{margin:0 0 6px;font-weight:800;font-size:18px}
 #wipe svg{width:92px;height:92px;margin-top:14px;animation:stamp .45s .3s cubic-bezier(.3,1.9,.5,1) backwards}
-@keyframes wipe{0%{transform:translateY(100%)}26%,74%{transform:none}100%{transform:translateY(-100%)}}
+@keyframes wipe{0%{transform:translateY(100%)}18%,84%{transform:none}100%{transform:translateY(-100%)}}
+#wipe .msg{margin:16px auto 0;max-width:22ch;font-size:clamp(19px,5.4vw,26px);line-height:1.25;animation:msgIn .4s .55s cubic-bezier(.3,1.6,.5,1) backwards}
+@keyframes msgIn{from{transform:translateY(16px) scale(.9);opacity:0}}
+#sled.hop svg{animation:hop .8s cubic-bezier(.3,1.4,.5,1)}
+@keyframes hop{0%{transform:none}35%{transform:translateY(-34px) rotate(-18deg)}70%{transform:translateY(0) rotate(4deg)}100%{transform:none}}
 @keyframes stamp{from{transform:scale(3) rotate(30deg);opacity:0}}
 
 /* Welcome */
@@ -293,11 +297,11 @@ var STEPS=[
  {id:"wishes",ch:3,type:"wishes",title:"Your wishes",sub:"Start with your top 3, then add as many more as you like. Color, size, version and where to find it all help."},
  {id:"tt",ch:3,type:"tt",title:"This or that?",sub:"Tap one in each row."},
  {id:"extras",ch:3,title:"Bonus round",group:"extras",fields:[
-   {k:"funDay",label:"A fun day you'd love with an aunt, uncle, Opa or Nana",type:"area",ph:"Movie, bowling, baking, a game night"},
+   {k:"funDay",label:"A fun day you'd love with an Aunt, Uncle, Opa or Nana",type:"area",ph:"Movie, bowling, baking, a game night"},
    {k:"giftCard",label:"A gift card you'd be happy with",ph:"Store, restaurant or app"},
    {k:"kindness",label:"A gift you'd love to give someone else"}]},
  {id:"draw",ch:3,type:"draw",title:"Draw your dream gift",sub:"Real or totally made up."},
- {id:"send",ch:3,type:"send",title:"Ready to send?",sub:"Your aunts, uncles, Opa and Nana will see your file. You can change it later."}
+ {id:"send",ch:3,type:"send",title:"Ready to send?",sub:"Your Aunts, Uncles, Opa and Nana will see your file. You can change it later."}
 ];
 var MAXW=10;
 function wishNums(p){var o=[];for(var i=1;i<=MAXW;i++)if(p&&p.wishes&&clean(p.wishes["w"+i]))o.push(i);return o;}
@@ -410,7 +414,7 @@ function welcome(msg){
   var logo=h("h1",{class:"logo"});
   [["The","w1",0],["Wish","w2",.14],["Files","w3",.28]].forEach(function(w){var s=h("span",{class:w[1],style:"animation-delay:"+w[2]+"s",text:w[0]});logo.appendChild(s);logo.appendChild(document.createTextNode(" "));});
   inner.appendChild(logo);
-  inner.appendChild(h("p",{class:"lead",text:"Top secret. Only your aunts, uncles, Opa and Nana get to read this. Tell them exactly what to look for."}));
+  inner.appendChild(h("p",{class:"lead",text:"Top secret. Only your Aunts, Uncles, Opa and Nana get to read this. Tell them exactly what to look for."}));
   if(DEADLINE)inner.appendChild(h("div",{class:"note",text:"Finish by "+DEADLINE}));
   if(!live)inner.appendChild(h("div",{class:"note",text:"Preview: any family code works, and answers vanish when you close this. Try the name Juniper to see a file that's already started."}));
   var form=h("form",{style:"display:flex;flex-direction:column;gap:16px",on:{submit:function(e){
@@ -446,7 +450,7 @@ function confirmMe(r){
   root.appendChild(h("div",{class:"welcome"},inner));
 }
 function begin(profile,drawing){
-  P=profile||{};P.name=S.name;S.wishSlots=0;S.draw=drawing||"";S.drawDirty=false;S.i=0;
+  P=profile||{};P.name=S.name;S.wishSlots=0;S.hopped=false;S.draw=drawing||"";S.drawDirty=false;S.i=0;
   clear(root);document.body.className="";
   var chips=h("div",{class:"chips"}),status=h("div",{class:"status",text:"Saved"});
   var chipEls=CH.map(function(c,n){
@@ -483,11 +487,27 @@ function go(n){
   if(from.ch!==to.ch&&dir>0&&!calm){
     var w=document.getElementById("wipe");
     clear(w);w.style.background=CH[to.ch].bg;
-    w.appendChild(h("div",{},h("p",{text:"Chapter "+(to.ch+1)+" of 4"}),h("h2",{text:CH[to.ch].name}),svg(STAR)));
+    w.appendChild(h("div",{},h("p",{text:"Chapter "+(to.ch+1)+" of 4"}),h("h2",{text:CH[to.ch].name}),svg(STAR),h("p",{class:"msg",text:cheer(to.ch)})));
     w.className="run";S.busy=true;
-    setTimeout(function(){S.i=n;render(dir);},420);
-    setTimeout(function(){w.className="";S.busy=false;},1260);
+    setTimeout(function(){S.i=n;render(dir);},380);
+    setTimeout(function(){w.className="";S.busy=false;},1920);
   } else {S.i=n;render(dir);}
+}
+var CHEERS={
+  1:["Nice work, {who}! The elves are taking notes.","Great start, {who}. Now for the good stuff.","{who}, you're a natural at this."],
+  2:["Halfway there. Your file is getting good!","{who}, this file is getting seriously good.","Keep going! Everyone's going to love reading this."],
+  3:["Last chapter. Save the best wishes for here!","Final chapter, {who}. Make those wishes specific!","Almost done! This is the part everyone reads first."]
+};
+function cheer(ch){
+  var who=clean(P.about&&P.about.codeName)||S.name||"Agent";
+  var list=CHEERS[ch]||[""];
+  return list[Math.floor(Math.random()*list.length)].replace("{who}",who);
+}
+function hopSled(){
+  if(calm||!frame.sled)return;
+  frame.sled.classList.remove("hop");void frame.sled.offsetWidth;frame.sled.classList.add("hop");
+  var r=frame.sled.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  for(var i=0;i<34;i++)bits.push({x:cx,y:cy,vx:(Math.random()-.5)*7,vy:-2-Math.random()*6,a:0,v:(Math.random()-.5)*.3,c:i%3?"#FFFDF7":"#FFC629"});
 }
 function leaving(){
   flush();
@@ -568,6 +588,8 @@ function render(dir){
   if(s.type!=="send")frame.foot.appendChild(h("button",{class:"btn go",id:"nextbtn",type:"button",text:"Next",on:{click:function(){go(S.i+1);}}}));
   nextLabel();
   requestAnimationFrame(placeSled);
+  var half=Math.floor(STEPS.length/2);
+  if(S.i===half&&dir>0&&!S.hopped){S.hopped=true;setTimeout(hopSled,750);}
 }
 function interests(pane){
   P.interests=P.interests||[];
@@ -677,7 +699,7 @@ function drawing(pane){
 function send(pane){
   var err=h("div",{class:"err hidden",role:"alert"});
   var wishesN=wishNums(P).length;
-  pane.appendChild(h("p",{class:"lead",text:wishesN?("You listed "+wishesN+" wish"+(wishesN>1?"es":"")+"."):"You haven't listed any wishes yet. Your aunts, uncles, Opa and Nana will want those."}));
+  pane.appendChild(h("p",{class:"lead",text:wishesN?("You listed "+wishesN+" wish"+(wishesN>1?"es":"")+"."):"You haven't listed any wishes yet. Your Aunts, Uncles, Opa and Nana will want those."}));
   if(!wishesN)pane.appendChild(h("button",{class:"btn",type:"button",text:"Add my wishes",on:{click:function(){go(STEPS.map(function(x){return x.id;}).indexOf("wishes"));}}}));
   var b=h("button",{class:"btn go",type:"button",text:"Send my file",on:{click:function(){
     b.disabled=true;b.textContent="Sending";err.classList.add("hidden");
@@ -694,7 +716,7 @@ function done(){
   var star=svg(STAR);star.setAttribute("width","110");star.setAttribute("height","110");
   stage.appendChild(h("div",{class:"pane in"},star,
     h("h2",{text:"File sent, "+S.name+"!"}),
-    h("p",{class:"lead",text:"Your aunts, uncles, Opa and Nana can read it now. Thought of something else? Come back any time with the same name and code."}),
+    h("p",{class:"lead",text:"Your Aunts, Uncles, Opa and Nana can read it now. Thought of something else? Come back any time with the same name and code."}),
     h("button",{class:"btn",type:"button",text:"Change my answers",on:{click:function(){S.i=0;render(-1);}}})));
 }
 
