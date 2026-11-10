@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Wish Files</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* One visual world: a night sled run. Each chapter floods the screen with its own color,
+   and a sled rides the hill at the bottom as the kid moves through the file. */
+:root{
+  --ink:#14123A; --snow:#FFFDF7; --sun:#FFC629; --mint:#27E0B0; --flare:#FF4F6D;
+  --cobalt:#2B35E8; --berry:#B81D62; --spruce:#0A6E60; --ember:#C2410C;
+  --paper:#F3F4FF; --line:#CBD0F2; --muted:#4D4C75;
+  --display:"Bowlby One","Arial Black",Impact,sans-serif;
+  --body:"Lexend","Trebuchet MS",system-ui,sans-serif;
+  --bg:var(--cobalt);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--snow);font:400 17px/1.45 var(--body);transition:background .5s;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:var(--ink)}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.08;text-wrap:balance;overflow-wrap:anywhere}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+#root{position:relative;z-index:2;height:100%}
+.hidden{display:none!important}
+
+/* Kid frame */
+.frame{height:100%;display:grid;grid-template-rows:auto 1fr auto auto}
+.top{display:flex;align-items:center;gap:6px;padding:12px 16px 8px;max-width:680px;width:100%;margin:0 auto}
+.chips{display:flex;gap:6px;flex:1;min-width:0}
+.chapchip{flex:1;min-width:0;background:rgba(255,253,247,.16);border:0;border-radius:8px;padding:0;height:34px;color:var(--snow);font-size:12px;font-weight:600;position:relative;overflow:hidden}
+.chapchip i{position:absolute;left:0;bottom:0;height:5px;background:var(--sun);transition:width .5s}
+.chapchip span{position:relative;display:block;padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chapchip.on{box-shadow:inset 0 0 0 2px var(--snow)}
+.status{font-size:12px;font-weight:600;min-width:52px;text-align:right;opacity:.92}
+.status.err{color:var(--sun)}
+#stage{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.pane{max-width:680px;margin:0 auto;padding:10px 16px 24px;display:flex;flex-direction:column;gap:16px}
+.pane.in{animation:paneIn .34s cubic-bezier(.2,.9,.3,1.2)}
+.pane.back{animation:paneBack .3s ease-out}
+@keyframes paneIn{from{transform:translateX(44px);opacity:.2}to{transform:none;opacity:1}}
+@keyframes paneBack{from{transform:translateX(-44px);opacity:.2}to{transform:none;opacity:1}}
+.pane h2{font-size:clamp(32px,9vw,46px)}
+.sub{margin:-8px 0 0;font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field>label,.lbl{font-weight:600;font-size:16px}
+.in-box{width:100%;min-height:52px;border:3px solid var(--ink);border-radius:12px;background:var(--snow);padding:11px 13px;font-size:18px;box-shadow:0 4px 0 var(--ink);transition:transform .12s,box-shadow .12s}
+.in-box:focus{outline:none;transform:translateY(-2px);box-shadow:0 6px 0 var(--sun)}
+textarea.in-box{min-height:92px;resize:vertical}
+.in-box::placeholder{color:#7a7898}
+.tiles{display:flex;flex-wrap:wrap;gap:9px}
+.tile{min-height:48px;padding:9px 15px;border:3px solid var(--ink);border-radius:999px;background:var(--snow);font-weight:600;font-size:16px;transition:transform .16s cubic-bezier(.3,1.8,.5,1),background .12s}
+.tile:nth-child(3n+1).sel{transform:rotate(-3deg) scale(1.05)}
+.tile:nth-child(3n+2).sel{transform:rotate(2deg) scale(1.05)}
+.tile:nth-child(3n).sel{transform:rotate(-1deg) scale(1.05)}
+.tile.sel{background:var(--sun);box-shadow:0 4px 0 var(--ink)}
+
+/* Colors */
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mode{min-height:50px;border:3px solid var(--ink);border-radius:12px;background:rgba(255,253,247,.25);color:var(--snow);font-weight:800;font-size:15px}
+.mode.on{background:var(--snow);color:var(--ink)}
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px}
+.sw{background:none;border:0;padding:0;color:var(--snow);font-size:14px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:6px}
+.sw b{position:relative;display:grid;place-items:center;width:62px;height:62px;border-radius:50%;border:3px solid var(--ink);font:400 22px var(--display);color:var(--ink);transition:transform .18s cubic-bezier(.3,1.8,.5,1)}
+.sw em{font-style:normal;background:var(--snow);border:2px solid var(--ink);border-radius:50%;width:34px;height:34px;display:grid;place-items:center;line-height:1}
+.sw.picked b{transform:scale(1.14) rotate(-6deg)}
+
+/* Have / want */
+.haves{display:flex;flex-direction:column;gap:10px}
+.have{background:rgba(255,253,247,.14);border-radius:14px;padding:10px 12px;display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
+.have strong{font-weight:600}
+.have button{min-height:46px;min-width:68px;border:3px solid var(--ink);border-radius:10px;background:var(--snow);font-weight:800;font-size:15px}
+.have button.has{background:var(--mint)}
+.have button.want{background:var(--sun)}
+.have input{grid-column:1/-1;min-height:46px;font-size:16px}
+
+/* This or that */
+.tts{display:flex;flex-direction:column;gap:12px}
+.tt{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.tt span{font:400 15px var(--display)}
+.tt button{min-height:62px;border:3px solid var(--ink);border-radius:14px;background:var(--snow);font-weight:800;font-size:16px;padding:6px;transition:transform .18s cubic-bezier(.3,1.8,.5,1)}
+.tt button.sel{background:var(--sun);transform:scale(1.05) rotate(-1.5deg);box-shadow:0 4px 0 var(--ink)}
+
+/* Wishes */
+.wishlist{display:flex;flex-direction:column;gap:18px}
+.wish{display:grid;grid-template-columns:minmax(50px,auto) 1fr;gap:6px 10px}
+.wish.extra{animation:paneIn .34s cubic-bezier(.2,.9,.3,1.2)}
+.wish .num{font:400 52px/1 var(--display);color:var(--sun);grid-row:span 2}
+.wish .field{grid-column:2}
+
+/* Drawing */
+.pad{background:#fff;border:3px solid var(--ink);border-radius:14px;touch-action:none;width:100%;aspect-ratio:4/3;display:block}
+.pens{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pen{width:42px;height:42px;border-radius:50%;border:3px solid var(--ink);padding:0}
+.pen.on{box-shadow:0 0 0 3px var(--snow)}
+.tool{min-height:44px;padding:0 14px;border:3px solid var(--ink);border-radius:10px;background:var(--snow);font-weight:800;font-size:15px}
+.tool.on{background:var(--sun)}
+
+/* Footer and hill */
+.foot{display:flex;gap:10px;max-width:680px;width:100%;margin:0 auto;padding:8px 16px}
+.btn{min-height:56px;border:3px solid var(--ink);border-radius:14px;background:var(--snow);font:400 19px var(--display);padding:0 18px;box-shadow:0 4px 0 var(--ink);transition:transform .1s,box-shadow .1s}
+.btn:active{transform:translateY(4px);box-shadow:none}
+.btn.go{flex:1;background:var(--sun)}
+.btn:disabled{opacity:.6}
+.hill{position:relative;height:80px;overflow:hidden}
+.hill svg.land{position:absolute;inset:0;width:100%;height:100%}
+#sled{position:absolute;left:0;bottom:0;width:54px;height:41px;transform-origin:50% 100%;transition:left .7s cubic-bezier(.4,.1,.3,1),bottom .7s cubic-bezier(.4,.1,.3,1),transform .7s}
+#sled svg{display:block;width:100%;height:100%;animation:bob 1.3s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-3px) rotate(-1deg)}}
+.flag{position:absolute;width:20px;height:28px;transform-origin:0 100%;animation:plant .4s cubic-bezier(.3,1.8,.5,1)}
+@keyframes plant{from{transform:scaleY(0)}to{transform:none}}
+@media (max-height:520px){.hill{display:none}}
+
+/* Chapter wipe */
+#wipe{position:fixed;inset:0;z-index:5;display:none;place-items:center;text-align:center;padding:24px;color:var(--snow)}
+#wipe.run{display:grid;animation:wipe 1.25s cubic-bezier(.7,0,.3,1) forwards}
+#wipe h2{font-size:clamp(46px,14vw,92px)}
+#wipe p{margin:0 0 6px;font-weight:800;font-size:18px}
+#wipe svg{width:92px;height:92px;margin-top:14px;animation:stamp .45s .3s cubic-bezier(.3,1.9,.5,1) backwards}
+@keyframes wipe{0%{transform:translateY(100%)}26%,74%{transform:none}100%{transform:translateY(-100%)}}
+@keyframes stamp{from{transform:scale(3) rotate(30deg);opacity:0}}
+
+/* Welcome */
+.welcome{height:100%;overflow-y:auto}
+.welcome .inner{max-width:520px;margin:0 auto;padding:clamp(24px,8vh,70px) 20px 96px;display:flex;flex-direction:column;gap:16px}
+.logo{font:400 clamp(64px,21vw,112px)/.92 var(--display);margin:0}
+.logo span{display:inline-block;animation:drop .6s cubic-bezier(.3,1.5,.5,1) backwards}
+.logo .w1{color:var(--snow)} .logo .w2{color:var(--sun)} .logo .w3{color:var(--mint)}
+@keyframes drop{from{transform:translateY(-120px) rotate(-14deg);opacity:0}}
+.lead{font-size:19px;font-weight:600;margin:0}
+.note{background:var(--snow);color:var(--ink);border-radius:12px;padding:10px 13px;font-size:15px;font-weight:600}
+.err{background:var(--sun);color:var(--ink);border-radius:12px;padding:10px 13px;font-weight:600;font-size:16px}
+.link{background:none;border:0;color:var(--snow);text-decoration:underline;font-weight:600;padding:10px 0;font-size:16px;align-self:flex-start;min-height:44px}
+.hill.fixed{position:fixed;left:0;right:0;bottom:0;z-index:-1}
+
+/* Grown-up board: same family, calmer, built for reading */
+body.adult{background:var(--paper);color:var(--ink);overflow:hidden}
+body.adult #fx{display:none}
+.board{height:100%;overflow-y:auto}
+.bar{position:sticky;top:0;z-index:3;background:var(--cobalt);color:var(--snow);padding:12px 16px}
+.bar .in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:10px}
+.bar h1{font-size:22px;flex:1;min-width:0}
+.ghost{min-height:44px;padding:0 13px;border:2px solid var(--snow);border-radius:10px;background:none;color:var(--snow);font-weight:600;font-size:15px}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px 60px;display:flex;flex-direction:column;gap:14px}
+.kidrow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 14px;text-align:left;width:100%;min-height:72px}
+.dot{width:44px;height:44px;border-radius:50%;border:3px solid var(--ink);display:block}
+.kidrow strong{font-family:var(--display);font-weight:400;font-size:21px;display:block;line-height:1.15}
+.kidrow small{font-size:14px;color:var(--muted)}
+.pill{font-size:13px;font-weight:800;padding:4px 10px;border-radius:999px;background:#E3E5FA;white-space:nowrap}
+.pill.done{background:var(--mint)}
+.hero{display:flex;gap:14px;align-items:center}
+.hero h2{font-size:36px}
+.hero p{margin:2px 0 0;color:var(--muted)}
+.sec{background:#fff;border:2px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.sec h3{font-size:19px;color:var(--cobalt)}
+.sec.stop{border-color:var(--flare)} .sec.stop h3{color:#B3173A}
+.kv{display:grid;grid-template-columns:minmax(110px,38%) 1fr;gap:10px;border-top:1px solid #E7E9FA;padding-top:8px;font-size:16px}
+.kv:first-of-type{border-top:0;padding-top:0}
+.kv span{color:var(--muted)}
+.kv div{overflow-wrap:anywhere;font-weight:600}
+.gift{display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E9FA;padding-top:10px}
+.gift:first-of-type{border-top:0;padding-top:0}
+.gift .t{font-weight:800;font-size:18px;overflow-wrap:anywhere}
+.gift .d{color:var(--muted);font-size:15px;overflow-wrap:anywhere}
+.dib{align-self:flex-start;min-height:44px;padding:0 14px;border:2px solid var(--ink);border-radius:10px;background:var(--sun);font-weight:800;font-size:15px}
+.dib.taken{background:#E3E5FA;border-color:transparent;cursor:default}
+.dib.mine{background:var(--mint)}
+.row{display:flex;gap:8px}
+.row input{flex:1;min-width:0;min-height:46px;border:2px solid var(--ink);border-radius:10px;padding:8px 11px;font-size:16px}
+.row button,.savebtn{min-height:46px;padding:0 14px;border:2px solid var(--ink);border-radius:10px;background:var(--sun);font-weight:800;font-size:15px}
+.chiplist{display:flex;flex-wrap:wrap;gap:6px}
+.chiplist b{font-weight:600;font-size:14px;background:#E3E5FA;border-radius:999px;padding:4px 10px}
+.colors{display:flex;gap:16px;flex-wrap:wrap}
+.colors div{display:flex;gap:7px;align-items:center;font-size:15px}
+.colors i{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);display:block}
+.draw{width:100%;max-width:420px;border:2px solid var(--line);border-radius:12px}
+.adultfield{display:flex;flex-direction:column;gap:5px}
+.adultfield label{font-weight:600;font-size:15px}
+.adultfield textarea{border:2px solid var(--line);border-radius:10px;padding:9px;min-height:60px;font-size:16px;resize:vertical}
+.savemsg{font-size:14px;font-weight:600;color:var(--muted)}
+.empty{text-align:center;padding:40px 10px;color:var(--muted)}
+@media (min-width:600px){.swatches{grid-template-columns:repeat(6,1fr)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="root"></div>
+<div id="wipe" aria-hidden="true"></div>
+<script>
+(function(){
+"use strict";
+/* Paste your Google Apps Script web app URL (ends in /exec) between the quotes. */
+var API_URL="https://script.google.com/macros/s/AKfycbzKaWjzfCjpOD-zjewIhZA3di7a4AqYX5Ga_-Ok3ZvNFag7UHdbKFZ81qkDWgHA02kd/exec"; if(API_URL.indexOf("__API")===0) API_URL="";
+var DEADLINE="";
+var calm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Tiny DOM helper. Everything typed by a person goes through textContent. ---------- */
+function h(tag,attrs){
+  var el=document.createElement(tag),a,i,c;
+  attrs=attrs||{};
+  for(a in attrs){
+    if(a==="on"){for(var ev in attrs.on) el.addEventListener(ev,attrs.on[ev]);}
+    else if(a==="class") el.className=attrs[a];
+    else if(a==="text") el.textContent=attrs[a];
+    else if(a==="value") el.value=attrs[a];
+    else if(a==="style") el.setAttribute("style",attrs[a]);
+    else if(attrs[a]===false||attrs[a]==null){}
+    else el.setAttribute(a,attrs[a]);
+  }
+  for(i=2;i<arguments.length;i++){c=arguments[i]; if(c==null||c===false) continue; el.appendChild(typeof c==="string"?document.createTextNode(c):c);}
+  return el;
+}
+function clear(n){while(n.firstChild)n.removeChild(n.firstChild);}
+var root=document.getElementById("root");
+var uid=0; function nid(){return "f"+(++uid);}
+function svg(markup,cls){var d=document.createElement("div");d.innerHTML=markup;var s=d.firstChild;if(cls)s.setAttribute("class",cls);return s;}
+function clean(v){return String(v==null?"":v).trim();}
+
+/* ---------- Data the form asks for. The grown-up board reads these same labels. ---------- */
+var CH=[{name:"You",bg:"#2B35E8"},{name:"Favorites",bg:"#B81D62"},{name:"Your stuff",bg:"#0A6E60"},{name:"Wishes",bg:"#C2410C"}];
+var STEPS=[
+ {id:"about",ch:0,title:"Who are you?",sub:"Skip anything you want. Every answer helps.",group:"about",fields:[
+   {k:"age",label:"How old are you?",type:"chips",options:["7","8","9","10","11","12","13"]},
+   {k:"codeName",label:"Your secret agent name",ph:"Agent Pickle"},
+   {k:"threeWords",label:"3 words that describe you",ph:"funny, fast, curious"},
+   {k:"dreamJob",label:"When you grow up, you want to be...",ph:"Vet, YouTuber, astronaut"}]},
+ {id:"sizes",ch:0,title:"Your sizes",sub:"Check your tags or ask a grown-up. Not sure? Skip it.",group:"sizes",fields:[
+   {k:"shirt",label:"Shirt",ph:"10/12 or M",half:1},{k:"pants",label:"Pants",ph:"12 slim",half:1},
+   {k:"shoes",label:"Shoes",ph:"4 youth",half:1},{k:"hoodie",label:"Hoodie or coat",ph:"M",half:1},
+   {k:"pajamas",label:"Pajamas",ph:"10",half:1},{k:"socks",label:"Socks",ph:"M",half:1},
+   {k:"hat",label:"Hat and gloves",ph:"Youth L",half:1},{k:"swim",label:"Swimsuit",ph:"12",half:1},
+   {k:"clothes",label:"Clothes as a gift?",type:"chips",options:["Yes please","Only fun ones","No thanks"]}]},
+ {id:"fun",ch:0,title:"Just for fun",sub:"No wrong answers here.",group:"fun",fields:[
+   {k:"superpower",label:"Pick a superpower",type:"chips",options:["Flying","Invisible","Super speed","Talk to animals","Teleport","Freeze time","Super strong","Read minds"]},
+   {k:"snowDay",label:"Best snow day",type:"chips",options:["Sledding","Snowball fight","Building a snowman","Cocoa and a movie"]},
+   {k:"sidekick",label:"Any animal can be your sidekick. Who?",ph:"A dragon, a raccoon, my dog"},
+   {k:"hundred",label:"Someone hands you $100 to spend today. What do you buy?",type:"area"},
+   {k:"themeSong",label:"Your walk-out song",ph:"The song that plays when you walk in"}]},
+ {id:"food",ch:0,title:"Food and treats",sub:"Stockings love this stuff.",group:"treats",fields:[
+   {k:"candy",label:"Favorite candy",ph:"Sour gummy worms"},
+   {k:"candyNo",label:"Least favorite candy",ph:"The one you always trade away"},
+   {k:"sweetSalty",label:"Sweet or salty?",type:"chips",options:["Sweet","Salty","Both!"]},
+   {k:"snack",label:"Favorite snack"},
+   {k:"drink",label:"Favorite drink",ph:"Hot cocoa, lemonade"},
+   {k:"flavor",label:"Ice cream or cereal flavor"},
+   {k:"restaurant",label:"Restaurant you'd pick"},
+   {k:"avoid",label:"Foods you don't like or can't have",ph:"Peanuts, mushrooms"}]},
+ {id:"vibe",ch:0,title:"Your room",group:"vibe",fields:[
+   {k:"roomVibe",label:"Your room's theme or vibe",ph:"space, cozy, sports"},
+   {k:"shelves",label:"Room on your shelves?",type:"chips",options:["Lots","Some","None"]}]},
+ {id:"saturday",ch:0,type:"interests",title:"Free Saturday",group:"vibe",fields:[{k:"saturday",label:"On a free Saturday, you'd find me...",type:"area",ph:"At the skate park, then building something"}]},
+ {id:"colors",ch:1,type:"colors",title:"Your colors",sub:"Pick a favorite, a second favorite, and one you can't stand."},
+ {id:"books",ch:1,title:"Books",sub:"Be specific. Names and numbers help a lot.",group:"books",fields:[
+   {k:"series",label:"Series you're reading now"},{k:"bookNum",label:"You're on book number"},
+   {k:"author",label:"Author you love"},{k:"readLots",label:"Books you've already read lots of"}]},
+ {id:"shows",ch:1,title:"Shows and movies",group:"shows",fields:[
+   {k:"show",label:"Show you watch the most"},{k:"movie",label:"Best movie ever"},
+   {k:"character",label:"Character you'd dress up as"},{k:"creator",label:"Video creator you like (grown-up OK'd)"}]},
+ {id:"games",ch:1,title:"Games",group:"games",fields:[
+   {k:"video",label:"Video game you play the most"},{k:"system",label:"You play on",ph:"Switch, tablet, PC"},
+   {k:"board",label:"Board or card game"},{k:"tryGame",label:"Game you want to try"}]},
+ {id:"music",ch:1,title:"Music",group:"music",fields:[
+   {k:"band",label:"Singer or band"},{k:"song",label:"Song stuck in your head"},
+   {k:"instrument",label:"Instrument you play or want to"},
+   {k:"headphones",label:"Do you have headphones?",type:"chips",options:["Yes","No"]}]},
+ {id:"sports",ch:1,title:"Sports and teams",group:"sports",fields:[
+   {k:"sport",label:"Sport you play"},{k:"position",label:"Position or event"},
+   {k:"team",label:"Team you cheer for"},{k:"player",label:"Player you think is the best"}]},
+ {id:"toys",ch:1,title:"Toys and stores",group:"toys",fields:[
+   {k:"toy",label:"Toy you play with the most"},{k:"brand",label:"Favorite toy or brand"},
+   {k:"store",label:"Store you love to look around in"},{k:"site",label:"Website or catalog you circle stuff in"}]},
+ {id:"animals",ch:1,title:"Animals and nature",group:"animals",fields:[
+   {k:"animal",label:"Favorite animal"},{k:"pets",label:"Pets you have (and their names)"},
+   {k:"petWish",label:"Pet you wish you had"},{k:"season",label:"Favorite season or outdoor spot"}]},
+ {id:"have",ch:2,type:"have",title:"Have it or want it?",sub:"Tap both if you have one and want a new one. This stops double gifts."},
+ {id:"stash",ch:2,title:"Your stash",group:"stash",fields:[
+   {k:"collect",label:"I collect... (and I'm still missing)",type:"area",ph:"Cards, figures, rocks, sets with numbers"},
+   {k:"lots",label:"I already have LOTS of...",type:"area",ph:"No more of these, please!"},
+   {k:"outgrew",label:"Something I outgrew, lost or broke that I still miss",type:"area"},
+   {k:"almostOut",label:"I'm almost out of...",type:"area",ph:"Markers, batteries, sketchbooks"}]},
+ {id:"limits",ch:2,title:"Good to know",group:"limits",fields:[
+   {k:"saving",label:"I'm saving up for...",type:"area",ph:"The big thing you've been dreaming about"},
+   {k:"wait",label:"My grown-ups said I have to wait for...",type:"area",ph:"Things you're not old enough for yet"},
+   {k:"bestGift",label:"Best gift you ever got"},{k:"neverUsed",label:"A gift you never really used"}]},
+ {id:"wishes",ch:3,type:"wishes",title:"Your wishes",sub:"Start with your top 3, then add as many more as you like. Color, size, version and where to find it all help."},
+ {id:"tt",ch:3,type:"tt",title:"This or that?",sub:"Tap one in each row."},
+ {id:"extras",ch:3,title:"Bonus round",group:"extras",fields:[
+   {k:"funDay",label:"A fun day you'd love with your aunt or uncle",type:"area",ph:"Movie, bowling, baking, a game night"},
+   {k:"giftCard",label:"A gift card you'd be happy with",ph:"Store, restaurant or app"},
+   {k:"kindness",label:"A gift you'd love to give someone else"}]},
+ {id:"draw",ch:3,type:"draw",title:"Draw your dream gift",sub:"Real or totally made up."},
+ {id:"send",ch:3,type:"send",title:"Ready to send?",sub:"Your aunts and uncles will see your file. You can change it later."}
+];
+var MAXW=10;
+function wishNums(p){var o=[];for(var i=1;i<=MAXW;i++)if(p&&p.wishes&&clean(p.wishes["w"+i]))o.push(i);return o;}
+var INTERESTS=["Building","Art & crafts","Science","Sports","Reading","Music","Video games","Puzzles","Dress-up","Cooking","Animals","Cars & trucks","Dolls & figures","Outdoors","Magic tricks","Board games","Dance","Making videos","Robots & coding","Hair & nails"];
+var COLORS=[["Red","#E11D48"],["Orange","#F7931E"],["Yellow","#FBD13B"],["Green","#35A853"],["Teal","#14A89B"],["Blue","#2F6BE8"],["Purple","#7C4FD0"],["Pink","#F58CBA"],["Brown","#8B5A3C"],["Black","#17171C"],["White","#FFFFFF"],["Rainbow","conic-gradient(#E11D48,#F7931E,#FBD13B,#35A853,#2F6BE8,#7C4FD0,#E11D48)"]];
+var HAVES=["Tablet","Game console","Headphones","Bike","Scooter or skates","Kid camera","Kid watch","Building sets","Art supplies kit","Sports gear","Sleeping bag or tent","Science or craft kits"];
+var PAIRS=[["Build it myself","Ready to play"],["Inside fun","Outside fun"],["A thing to keep","A fun day out"],["One big gift","Lots of little ones"],["Surprise me","Stick to my list"],["Play alone","Play with friends"],["Make things","Collect things"],["Quiet & cozy","Loud & wild"]];
+
+/* ---------- Backend: the real Google Apps Script, or a sample one for the preview. ---------- */
+var live=!!API_URL;
+function gs(fn){
+  var args=[].slice.call(arguments,1);
+  /* credentials:"omit" keeps the kid's own Google sign-in out of it, so supervised accounts aren't blocked. */
+  return fetch(API_URL,{method:"POST",credentials:"omit",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn:fn,args:args})})
+    .then(function(r){if(!r.ok)throw new Error();return r.json();},function(){throw new Error("The connection dropped. Check your Wi-Fi and try again.");})
+    .then(function(o){if(!o||o.ok===false)throw new Error(o&&o.error||"Something went wrong. Try again in a minute.");return o;},function(e){throw new Error(e&&e.message||"Something went wrong. Try again in a minute.");});
+}
+var mock=live?null:(function(){
+  var kids={
+   juniper:{name:"Juniper",submitted:true,updatedAt:Date.now(),about:{age:"9",codeName:"Agent Panda",threeWords:"loud, kind, sneaky",dreamJob:"Zookeeper"},fun:{superpower:"Talk to animals",snowDay:"Sledding",sidekick:"A red panda named Rusty",hundred:"Fancy markers and a hamster tunnel"},vibe:{roomVibe:"Jungle treehouse",shelves:"Some",saturday:"Building forts with my brother"},sizes:{shirt:"10/12",pants:"10 slim",shoes:"3 youth",hoodie:"M",clothes:"Only fun ones"},interests:["Building","Animals","Art & crafts","Magic tricks"],colors:{fav:"Teal",second:"Orange",nope:"Brown"},books:{series:"Sample Dragon Academy",bookNum:"4",author:"Sample Author"},treats:{candy:"Sour gummy worms",candyNo:"Black licorice",sweetSalty:"Both!",drink:"Hot cocoa",avoid:"Peanuts"},games:{video:"Sample Farm Quest",system:"Tablet",board:"Sample Card Battle"},animals:{animal:"Red panda",pets:"Biscuit (hamster)",petWish:"A real red panda"},have:{Tablet:{has:true,kind:""},Bike:{has:true,want:true,kind:"Teal, 24 inch"},"Art supplies kit":{want:true,kind:"Alcohol markers"}},stash:{collect:"Enamel pins, missing the axolotl",lots:"Stuffed animals",almostOut:"Sketchbooks"},limits:{saving:"A telescope",wait:"A phone",bestGift:"Rock tumbler",x:""},wishes:{w1:"Rock tumbler refill kit",d1:"Any brand with polishing grit, 3 lb",w2:"Red panda hoodie",d2:"Size M, zip front",w3:"Magic trick set",w4:"Glow-in-the-dark stars",d4:"The kind that stick to the ceiling"},tt:{"0":"Build it myself","1":"Outside fun","4":"Surprise me"},extras:{funDay:"Bowling and tacos",giftCard:"Bookstore",kindness:"A cozy blanket for my grandpa"}},
+   theo:{name:"Theo",submitted:false,updatedAt:Date.now(),about:{age:"12"},sizes:{shirt:"Adult S",shoes:"7"},interests:["Video games","Robots & coding","Sports"],colors:{fav:"Black"},games:{video:"Sample Space Racer",system:"PC"},have:{Headphones:{want:true,kind:"Wireless, black"}},wishes:{w1:"Mechanical keyboard",d1:"Compact, quiet switches"}}
+  };
+  var draws={},adult={juniper:{notes:{bought:"Rock tumbler is covered",reach:"Text Dee"},claims:[{id:"c1",who:"Uncle Ray",item:"w2",what:"Red panda hoodie"}]},theo:{notes:{},claims:[]}};
+  function key(n){return clean(n).toLowerCase().replace(/\s+/g," ");}
+  function wait(v){return new Promise(function(r){setTimeout(function(){r(v);},180);});}
+  return {
+   info:function(){return wait({ok:true,deadline:""});},
+   kidStart:function(c,n){var k=key(n);return wait({ok:true,exists:!!kids[k],profile:kids[k]||null,drawing:draws[k]||""});},
+   kidSave:function(c,n,p){kids[key(n)]=p;if(!adult[key(n)])adult[key(n)]={notes:{},claims:[]};return wait({ok:true});},
+   kidSaveDrawing:function(c,n,d){draws[key(n)]=d;return wait({ok:true});},
+   adultLoad:function(){return wait({ok:true,kids:Object.keys(kids).map(function(k){return {key:k,profile:kids[k],drawing:draws[k]||"",adult:adult[k]||{notes:{},claims:[]}};})});},
+   adultNotes:function(c,k,n){adult[k].notes=n;return wait({ok:true,adult:adult[k]});},
+   adultClaim:function(c,k,cl){var hit=adult[k].claims.filter(function(x){return cl.item!=="idea"&&x.item===cl.item;})[0];if(hit)return Promise.reject(new Error(hit.who+" already called dibs on that."));cl.id="c"+Date.now();adult[k].claims.push(cl);return wait({ok:true,adult:adult[k]});},
+   adultRelease:function(c,k,id){adult[k].claims=adult[k].claims.filter(function(x){return x.id!==id;});return wait({ok:true,adult:adult[k]});}
+  };
+})();
+var api={};
+["info","kidStart","kidSave","kidSaveDrawing","adultLoad","adultNotes","adultClaim","adultRelease"].forEach(function(fn){
+  api[fn]=function(){var a=[].slice.call(arguments);return live?gs.apply(null,[fn].concat(a)):mock[fn].apply(mock,a);};
+});
+
+/* ---------- Snow and confetti ---------- */
+var fx=document.getElementById("fx"),g=fx.getContext("2d"),W=0,H=0,flakes=[],bits=[];
+function size(){W=fx.width=innerWidth;H=fx.height=innerHeight;}
+addEventListener("resize",size);size();
+for(var f=0;f<38;f++)flakes.push({x:Math.random()*W,y:Math.random()*H,r:1+Math.random()*3,s:.3+Math.random()*.9,p:Math.random()*6});
+function drawFx(){
+  g.clearRect(0,0,W,H);
+  g.fillStyle="rgba(255,253,247,.75)";
+  flakes.forEach(function(n){n.y+=n.s;n.p+=.012;n.x+=Math.sin(n.p)*.4;if(n.y>H+5){n.y=-5;n.x=Math.random()*W;}g.beginPath();g.arc(n.x,n.y,n.r,0,7);g.fill();});
+  bits=bits.filter(function(b){return b.y<H+20;});
+  bits.forEach(function(b){b.vy+=.16;b.x+=b.vx;b.y+=b.vy;b.a+=b.v;g.save();g.translate(b.x,b.y);g.rotate(b.a);g.fillStyle=b.c;g.fillRect(-5,-3,10,6);g.restore();});
+  if(!calm)requestAnimationFrame(drawFx);
+}
+if(calm){flakes.forEach(function(n){g.fillStyle="rgba(255,253,247,.7)";g.beginPath();g.arc(n.x,n.y,n.r,0,7);g.fill();});}else drawFx();
+function confetti(n){if(calm)return;var cs=["#FFC629","#27E0B0","#FF4F6D","#FFFDF7","#2B35E8"];for(var i=0;i<(n||90);i++)bits.push({x:W/2+(Math.random()-.5)*W*.5,y:H*.45,vx:(Math.random()-.5)*11,vy:-4-Math.random()*9,a:Math.random()*6,v:(Math.random()-.5)*.4,c:cs[i%5]});}
+
+/* ---------- Kid flow ---------- */
+var S={code:"",name:"",i:0,draw:"",drawDirty:false},P={};
+var SLED='<svg viewBox="0 0 66 50" xmlns="http://www.w3.org/2000/svg"><path d="M5 42h48c6 0 9-3 10-8" fill="none" stroke="#14123A" stroke-width="4" stroke-linecap="round"/><path d="M14 42v-6M44 42v-6" stroke="#14123A" stroke-width="4"/><rect x="8" y="27" width="46" height="10" rx="3" fill="#FF4F6D" stroke="#14123A" stroke-width="3"/><path d="M19 28c-2-18 26-18 25 0z" fill="#FFFDF7" stroke="#14123A" stroke-width="3"/><circle cx="27" cy="20" r="2.4" fill="#14123A"/><circle cx="36" cy="20" r="2.4" fill="#14123A"/><path d="M29 25q2.6 2 5 0" fill="none" stroke="#14123A" stroke-width="2" stroke-linecap="round"/><path d="M20 15c2-10 21-10 23 0z" fill="#FFC629" stroke="#14123A" stroke-width="3"/><circle cx="31.500" cy="6" r="4" fill="#27E0B0" stroke="#14123A" stroke-width="2.500"/></svg>';
+var FLAG='<svg viewBox="0 0 24 34" xmlns="http://www.w3.org/2000/svg" width="20" height="28"><path d="M3 34V3" stroke="#14123A" stroke-width="3"/><path d="M4 3l18 6-18 7z" fill="#FFC629" stroke="#14123A" stroke-width="2"/></svg>';
+var STAR='<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 6l13 29 32 3-24 21 7 31-28-16-28 16 7-31L5 38l32-3z" fill="#FFC629" stroke="#14123A" stroke-width="6" stroke-linejoin="round"/></svg>';
+var HILL="M0 62 C120 50 200 54 300 62 S470 76 590 66 S800 50 1000 70 L1000 80 L0 80 Z";
+
+function hillEl(){
+  var box=h("div",{class:"hill"});
+  box.appendChild(svg('<svg class="land" viewBox="0 0 1000 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="'+HILL+'" fill="#FFFDF7" stroke="#14123A" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>'));
+  return box;
+}
+function hillPoint(box,t){
+  var p=box.querySelector("path"),L=p.getTotalLength()*0.5;
+  /* The top curve is the first part of the outline: walk it until x reaches the target. */
+  var targetX=1000*t,lo=0,hi=p.getTotalLength();
+  for(var n=0;n<24;n++){var m=(lo+hi)/2,pt=p.getPointAtLength(m);if(pt.x<targetX&&m<hi)lo=m;else hi=m;}
+  var a=p.getPointAtLength(lo),b=p.getPointAtLength(lo+6);
+  return {x:a.x,y:a.y,dx:b.x-a.x,dy:b.y-a.y,L:L};
+}
+function placeOnHill(box,el,t,lift){
+  var q=hillPoint(box,t),w=box.clientWidth,ht=box.clientHeight;
+  el.style.left=(q.x/1000*w-el.offsetWidth/2)+"px";
+  el.style.bottom=((80-q.y)/80*ht-(lift||0))+"px";
+  return Math.atan2(q.dy*ht/80,q.dx*w/1000)*180/Math.PI;
+}
+
+var frame={},saving=false,dirty=false,timer=null;
+function setStatus(s){
+  if(!frame.status)return;
+  frame.status.textContent=s==="saving"?"Saving":s==="error"?"Not saved":"Saved";
+  frame.status.className="status"+(s==="error"?" err":"");
+}
+function flush(){
+  if(saving){dirty=true;return Promise.resolve();}
+  saving=true;setStatus("saving");
+  return api.kidSave(S.code,S.name,P).then(function(){setStatus("saved");},function(){setStatus("error");}).then(function(){
+    saving=false; if(dirty){dirty=false;flush();}
+  });
+}
+function touched(){clearTimeout(timer);timer=setTimeout(flush,2500);}
+
+function welcome(msg){
+  document.body.className="";document.documentElement.style.setProperty("--bg","#2B35E8");
+  clear(root);
+  var nameId=nid(),codeId=nid();
+  var name=h("input",{id:nameId,class:"in-box",autocomplete:"off",maxlength:"30",placeholder:"First name",value:S.name});
+  var code=h("input",{id:codeId,class:"in-box",autocomplete:"off",autocapitalize:"off",placeholder:"Ask a grown-up",value:S.code});
+  var err=h("div",{class:"err hidden",role:"alert"});
+  if(msg){err.textContent=msg;err.classList.remove("hidden");}
+  var go=h("button",{class:"btn go",type:"submit",text:"Open my file"});
+  var inner=h("div",{class:"inner"});
+  var logo=h("h1",{class:"logo"});
+  [["The","w1",0],["Wish","w2",.14],["Files","w3",.28]].forEach(function(w){var s=h("span",{class:w[1],style:"animation-delay:"+w[2]+"s",text:w[0]});logo.appendChild(s);logo.appendChild(document.createTextNode(" "));});
+  inner.appendChild(logo);
+  inner.appendChild(h("p",{class:"lead",text:"Top secret. Only your aunts and uncles get to read this. Tell them exactly what to look for."}));
+  if(DEADLINE)inner.appendChild(h("div",{class:"note",text:"Finish by "+DEADLINE}));
+  if(!live)inner.appendChild(h("div",{class:"note",text:"Preview: any family code works, and answers vanish when you close this. Try the name Juniper to see a file that's already started."}));
+  var form=h("form",{style:"display:flex;flex-direction:column;gap:16px",on:{submit:function(e){
+    e.preventDefault();
+    var n=clean(name.value),c=clean(code.value);
+    if(!n){showErr("Type your first name to open your file.");return;}
+    if(!c){showErr("Type the family code. A grown-up has it.");return;}
+    go.disabled=true;go.textContent="Opening";
+    api.kidStart(c,n).then(function(r){
+      S.code=c;S.name=n;
+      if(r.exists)confirmMe(r);else begin({name:n},"");
+    },function(e){go.disabled=false;go.textContent="Open my file";showErr(e.message);});
+  }}},
+    h("div",{class:"field"},h("label",{for:nameId,text:"Your first name"}),name),
+    h("div",{class:"field"},h("label",{for:codeId,text:"Family code"}),code),
+    err,go);
+  function showErr(t){err.textContent=t;err.classList.remove("hidden");}
+  inner.appendChild(form);
+  inner.appendChild(h("button",{class:"link",type:"button",text:"I'm a grown-up",on:{click:adultGate}}));
+  var page=h("div",{class:"welcome"},inner);
+  var hill=hillEl();hill.classList.add("fixed");
+  root.appendChild(page);root.appendChild(hill);
+  var sled=svg(SLED);var sw=h("div",{id:"sled"},sled);hill.appendChild(sw);
+  var deg=placeOnHill(hill,sw,.5,4);sw.style.transform="rotate("+deg+"deg)";
+}
+function confirmMe(r){
+  clear(root);
+  var inner=h("div",{class:"inner"},
+    h("h2",{style:"font-size:42px",text:"Found a file for "+S.name}),
+    h("p",{class:"lead",text:"Is that you? If it's a cousin with your name, add your last initial so you each get your own file."}),
+    h("button",{class:"btn go",text:"Yes, that's me",on:{click:function(){begin(r.profile,r.drawing);}}}),
+    h("button",{class:"btn",text:"No, go back",on:{click:function(){S.name="";welcome();}}}));
+  root.appendChild(h("div",{class:"welcome"},inner));
+}
+function begin(profile,drawing){
+  P=profile||{};P.name=S.name;S.wishSlots=0;S.draw=drawing||"";S.drawDirty=false;S.i=0;
+  clear(root);document.body.className="";
+  var chips=h("div",{class:"chips"}),status=h("div",{class:"status",text:"Saved"});
+  var chipEls=CH.map(function(c,n){
+    var fill=h("i",{style:"width:0"}),lab=h("span",{text:c.name});
+    var b=h("button",{class:"chapchip",type:"button","aria-label":"Go to "+c.name,on:{click:function(){go(firstOf(n));}}},fill,lab);
+    b._f=fill;chips.appendChild(b);return b;
+  });
+  var stage=h("div",{id:"stage"});
+  var foot=h("div",{class:"foot"});
+  var hill=hillEl();var sw=h("div",{id:"sled"},svg(SLED));hill.appendChild(sw);
+  root.appendChild(h("div",{class:"frame"},h("div",{class:"top"},chips,status),stage,foot,hill));
+  frame={status:status,chips:chipEls,stage:stage,foot:foot,hill:hill,sled:sw,flags:{}};
+  addEventListener("resize",placeSled);
+  render(1);
+}
+function firstOf(c){for(var n=0;n<STEPS.length;n++)if(STEPS[n].ch===c)return n;return 0;}
+function placeSled(){
+  if(!frame.hill||!frame.hill.isConnected)return;
+  var t=.05+.87*(S.i/(STEPS.length-1));
+  var deg=placeOnHill(frame.hill,frame.sled,t,4);
+  frame.sled.style.transform="rotate("+deg+"deg)";
+  CH.forEach(function(c,n){
+    var last=firstOf(n+1)||STEPS.length;
+    if(n<3&&S.i>=last){
+      if(!frame.flags[n]){var fl=h("div",{class:"flag"},svg(FLAG));frame.hill.appendChild(fl);frame.flags[n]=fl;}
+      placeOnHill(frame.hill,frame.flags[n],.05+.87*((last-.5)/(STEPS.length-1)),2);
+    }
+  });
+}
+function go(n){
+  if(n<0||n>=STEPS.length||n===S.i||S.busy)return;
+  leaving();
+  var from=STEPS[S.i],to=STEPS[n],dir=n>S.i?1:-1;
+  if(from.ch!==to.ch&&dir>0&&!calm){
+    var w=document.getElementById("wipe");
+    clear(w);w.style.background=CH[to.ch].bg;
+    w.appendChild(h("div",{},h("p",{text:"Chapter "+(to.ch+1)+" of 4"}),h("h2",{text:CH[to.ch].name}),svg(STAR)));
+    w.className="run";S.busy=true;
+    setTimeout(function(){S.i=n;render(dir);},420);
+    setTimeout(function(){w.className="";S.busy=false;},1260);
+  } else {S.i=n;render(dir);}
+}
+function leaving(){
+  flush();
+  if(S.drawDirty){var d=S.draw;api.kidSaveDrawing(S.code,S.name,d).then(function(){if(S.draw===d)S.drawDirty=false;},function(){setStatus("error");});}
+}
+function setV(group,k,v){P[group]=P[group]||{};P[group][k]=v;touched();nextLabel();}
+function getV(group,k){return P[group]&&P[group][k]||"";}
+function stepEmpty(){
+  var s=STEPS[S.i];
+  if(s.type==="send"||s.type==="draw")return s.type==="draw"&&!S.draw;
+  if(s.type==="colors")return !P.colors||!(P.colors.fav||P.colors.second||P.colors.nope);
+  if(s.type==="have")return !P.have||!Object.keys(P.have).some(function(k){var x=P.have[k];return x.has||x.want;});
+  if(s.type==="tt")return !P.tt||!Object.keys(P.tt).length;
+  if(s.type==="wishes")return !P.wishes||!Object.keys(P.wishes).some(function(k){return clean(P.wishes[k]);});
+  var any=(s.fields||[]).some(function(f){return clean(getV(s.group,f.k));});
+  if(s.type==="interests"&&P.interests&&P.interests.length)any=true;
+  return !any;
+}
+function nextLabel(){var b=document.getElementById("nextbtn");if(b)b.textContent=stepEmpty()?"Skip":"Next";}
+
+function fieldEl(group,f){
+  var id=nid(),val=getV(group,f.k),ctl;
+  if(f.type==="chips"){
+    var wrap=h("div",{class:"tiles",role:"group","aria-label":f.label});
+    f.options.forEach(function(o){
+      var b=h("button",{class:"tile"+(val===o?" sel":""),type:"button","aria-pressed":val===o?"true":"false",text:o,on:{click:function(){
+        var now=getV(group,f.k)===o?"":o;
+        setV(group,f.k,now);
+        [].forEach.call(wrap.children,function(c){var on=c.textContent===now;c.classList.toggle("sel",on);c.setAttribute("aria-pressed",on?"true":"false");});
+      }}});
+      wrap.appendChild(b);
+    });
+    return h("div",{class:"field"},h("div",{class:"lbl",text:f.label}),wrap);
+  }
+  if(f.type==="select"){
+    ctl=h("select",{id:id,class:"in-box",on:{change:function(e){setV(group,f.k,e.target.value);}}},h("option",{value:"",text:"Pick"}));
+    f.options.forEach(function(o){ctl.appendChild(h("option",{value:o,text:o}));});
+    ctl.value=val;
+  } else if(f.type==="area"){
+    ctl=h("textarea",{id:id,class:"in-box",maxlength:"500",placeholder:f.ph||"",on:{input:function(e){setV(group,f.k,e.target.value);}}});
+    ctl.value=val;
+  } else {
+    ctl=h("input",{id:id,class:"in-box",autocomplete:"off",maxlength:"200",placeholder:f.ph||"",value:val,on:{input:function(e){setV(group,f.k,e.target.value);}}});
+  }
+  return h("div",{class:"field"},h("label",{for:id,text:f.label}),ctl);
+}
+function fieldsInto(pane,s){
+  var run=null;
+  s.fields.forEach(function(f){
+    if(f.half){if(!run){run=h("div",{class:"grid2"});pane.appendChild(run);}run.appendChild(fieldEl(s.group,f));}
+    else{run=null;pane.appendChild(fieldEl(s.group,f));}
+  });
+}
+function render(dir){
+  var s=STEPS[S.i],stage=frame.stage;
+  document.documentElement.style.setProperty("--bg",CH[s.ch].bg);
+  frame.chips.forEach(function(b,n){
+    var first=firstOf(n),count=STEPS.filter(function(x){return x.ch===n;}).length,done=Math.max(0,Math.min(count,S.i-first+(n===s.ch?1:0)));
+    if(n<s.ch)done=count;
+    b._f.style.width=(done/count*100)+"%";
+    b.classList.toggle("on",n===s.ch);
+  });
+  clear(stage);stage.scrollTop=0;
+  var pane=h("div",{class:"pane "+(dir<0?"back":"in")});
+  pane.appendChild(h("h2",{text:s.title}));
+  if(s.sub)pane.appendChild(h("p",{class:"sub",text:s.sub}));
+  if(s.type==="interests"){fieldsInto(pane,s);interests(pane);}
+  else if(s.type==="colors")colors(pane);
+  else if(s.type==="have")have(pane);
+  else if(s.type==="wishes")wishes(pane);
+  else if(s.type==="tt")thisThat(pane);
+  else if(s.type==="draw")drawing(pane);
+  else if(s.type==="send")send(pane);
+  else fieldsInto(pane,s);
+  stage.appendChild(pane);
+  clear(frame.foot);
+  if(S.i>0)frame.foot.appendChild(h("button",{class:"btn",type:"button",text:"Back",on:{click:function(){go(S.i-1);}}}));
+  if(s.type!=="send")frame.foot.appendChild(h("button",{class:"btn go",id:"nextbtn",type:"button",text:"Next",on:{click:function(){go(S.i+1);}}}));
+  nextLabel();
+  requestAnimationFrame(placeSled);
+}
+function interests(pane){
+  P.interests=P.interests||[];
+  var wrap=h("div",{class:"tiles"});
+  INTERESTS.forEach(function(t){
+    var on=P.interests.indexOf(t)>=0;
+    wrap.appendChild(h("button",{class:"tile"+(on?" sel":""),type:"button","aria-pressed":on?"true":"false",text:t,on:{click:function(e){
+      var i=P.interests.indexOf(t);if(i>=0)P.interests.splice(i,1);else P.interests.push(t);
+      e.currentTarget.classList.toggle("sel",i<0);e.currentTarget.setAttribute("aria-pressed",i<0?"true":"false");touched();nextLabel();
+    }}}));
+  });
+  pane.appendChild(h("div",{class:"lbl",text:"Tap everything that sounds like you"}));
+  pane.appendChild(wrap);
+}
+function colors(pane){
+  P.colors=P.colors||{};
+  var mode=!P.colors.fav?"fav":!P.colors.second?"second":"nope";
+  var labels={fav:"Favorite",second:"Second",nope:"Yuck"},marks={fav:"1",second:"2",nope:"X"};
+  var modes=h("div",{class:"modes"}),sw=h("div",{class:"swatches"});
+  function draw(){
+    clear(modes);clear(sw);
+    ["fav","second","nope"].forEach(function(m){modes.appendChild(h("button",{class:"mode"+(m===mode?" on":""),type:"button","aria-pressed":m===mode?"true":"false",text:labels[m],on:{click:function(){mode=m;draw();}}}));});
+    COLORS.forEach(function(c){
+      var slot=["fav","second","nope"].filter(function(m){return P.colors[m]===c[0];})[0];
+      var circle=h("b",{style:"background:"+c[1]});
+      if(slot)circle.appendChild(h("em",{text:marks[slot]}));
+      sw.appendChild(h("button",{class:"sw"+(slot?" picked":""),type:"button","aria-label":c[0]+(slot?", "+labels[slot]:""),on:{click:function(){
+        ["fav","second","nope"].forEach(function(m){if(P.colors[m]===c[0])P.colors[m]="";});
+        if(slot!==mode){P.colors[mode]=c[0];
+          if(mode==="fav"&&!P.colors.second)mode="second";else if(mode==="second"&&!P.colors.nope)mode="nope";}
+        touched();nextLabel();draw();
+      }}},circle,c[0]));
+    });
+  }
+  draw();pane.appendChild(modes);pane.appendChild(sw);
+}
+function have(pane){
+  P.have=P.have||{};
+  var list=h("div",{class:"haves"});
+  HAVES.forEach(function(item){
+    var r=P.have[item]=P.have[item]||{has:false,want:false,kind:""};
+    var input=h("input",{class:"in-box","aria-label":"Which kind or color of "+item,maxlength:"200",placeholder:"Which kind or color?",value:r.kind||"",on:{input:function(e){r.kind=e.target.value;touched();}}});
+    function sync(){input.classList.toggle("hidden",!(r.has||r.want));a.className=r.has?"has":"";b.className=r.want?"want":"";a.setAttribute("aria-pressed",String(!!r.has));b.setAttribute("aria-pressed",String(!!r.want));nextLabel();}
+    var a=h("button",{type:"button","aria-label":"I have "+item,text:"Have",on:{click:function(){r.has=!r.has;sync();touched();}}});
+    var b=h("button",{type:"button","aria-label":"I want "+item,text:"Want",on:{click:function(){r.want=!r.want;sync();touched();}}});
+    list.appendChild(h("div",{class:"have"},h("strong",{text:item}),a,b,input));
+    sync();
+  });
+  pane.appendChild(list);
+}
+function wishes(pane){
+  var got=wishNums(P),slots=Math.max(3,S.wishSlots||0,got.length?got[got.length-1]:0);
+  var list=h("div",{class:"wishlist"});
+  function add(i){
+    var row=h("div",{class:"wish"+(i>3?" extra":"")},h("div",{class:"num",text:String(i)}),
+      fieldEl("wishes",{k:"w"+i,label:i===1?"Your #1 wish, if you only got one thing":i<=3?"Wish "+i:"Bonus wish"}),
+      fieldEl("wishes",{k:"d"+i,label:"Exact details",type:"area",ph:"Color, size, version, where to find it"}));
+    list.appendChild(row);return row;
+  }
+  for(var i=1;i<=slots;i++)add(i);
+  pane.appendChild(list);
+  var more=h("button",{class:"btn",type:"button",text:"Add another wish",on:{click:function(){
+    slots++;S.wishSlots=slots;var r=add(slots);
+    try{r.querySelector("input").focus({preventScroll:true});}catch(_){}
+    r.scrollIntoView({behavior:calm?"auto":"smooth",block:"center"});
+    if(slots>=MAXW)more.classList.add("hidden");
+  }}});
+  if(slots>=MAXW)more.classList.add("hidden");
+  pane.appendChild(more);
+}
+function thisThat(pane){
+  P.tt=P.tt||{};
+  var list=h("div",{class:"tts"});
+  PAIRS.forEach(function(p,n){
+    var row=h("div",{class:"tt"});
+    function btn(t){return h("button",{type:"button",class:P.tt[n]===t?"sel":"","aria-pressed":P.tt[n]===t?"true":"false",text:t,on:{click:function(){
+      if(P.tt[n]===t)delete P.tt[n];else P.tt[n]=t;
+      [].forEach.call(row.querySelectorAll("button"),function(x){var on=x.textContent===P.tt[n];x.classList.toggle("sel",on);x.setAttribute("aria-pressed",on?"true":"false");});
+      touched();nextLabel();
+    }}});}
+    row.appendChild(btn(p[0]));row.appendChild(h("span",{text:"or"}));row.appendChild(btn(p[1]));
+    list.appendChild(row);
+  });
+  pane.appendChild(list);
+}
+function drawing(pane){
+  var c=h("canvas",{class:"pad",width:"640",height:"480","aria-label":"Drawing pad"}),x=c.getContext("2d");
+  x.fillStyle="#fff";x.fillRect(0,0,640,480);x.lineCap=x.lineJoin="round";
+  if(/^data:image\/(jpeg|png);base64,/.test(S.draw)){var im=new Image();im.onload=function(){x.drawImage(im,0,0,640,480);};im.src=S.draw;}
+  var color="#14123A",width=7,down=false,last=null;
+  function pos(e){var r=c.getBoundingClientRect();return [(e.clientX-r.left)*640/r.width,(e.clientY-r.top)*480/r.height];}
+  function commit(){S.draw=c.toDataURL("image/jpeg",.7);S.drawDirty=true;nextLabel();}
+  c.addEventListener("pointerdown",function(e){e.preventDefault();down=true;last=pos(e);try{c.setPointerCapture(e.pointerId);}catch(_){ }x.fillStyle=color;x.beginPath();x.arc(last[0],last[1],width/2,0,7);x.fill();});
+  c.addEventListener("pointermove",function(e){if(!down)return;e.preventDefault();var p=pos(e);x.strokeStyle=color;x.lineWidth=width;x.beginPath();x.moveTo(last[0],last[1]);x.lineTo(p[0],p[1]);x.stroke();last=p;});
+  function up(){if(down){down=false;commit();}}
+  c.addEventListener("pointerup",up);c.addEventListener("pointercancel",up);
+  var pens=h("div",{class:"pens"});
+  var penEls=["#14123A","#E11D48","#F7931E","#FBD13B","#35A853","#2F6BE8","#7C4FD0"].map(function(col,i){
+    var b=h("button",{class:"pen"+(i?"":" on"),type:"button","aria-label":"Pen color "+(i+1),style:"background:"+col,on:{click:function(){color=col;penEls.forEach(function(p){p.classList.remove("on");});b.classList.add("on");thick.textContent=width>10?"Thick":"Thin";}}});
+    pens.appendChild(b);return b;
+  });
+  var thick=h("button",{class:"tool",type:"button",text:"Thin",on:{click:function(){width=width>10?7:16;thick.textContent=width>10?"Thick":"Thin";}}});
+  pens.appendChild(thick);
+  pens.appendChild(h("button",{class:"tool",type:"button",text:"Clear",on:{click:function(){x.fillStyle="#fff";x.fillRect(0,0,640,480);S.draw="";S.drawDirty=true;nextLabel();}}}));
+  pane.appendChild(c);pane.appendChild(pens);
+}
+function send(pane){
+  var err=h("div",{class:"err hidden",role:"alert"});
+  var wishesN=wishNums(P).length;
+  pane.appendChild(h("p",{class:"lead",text:wishesN?("You listed "+wishesN+" wish"+(wishesN>1?"es":"")+"."):"You haven't listed any wishes yet. Your aunts and uncles will want those."}));
+  if(!wishesN)pane.appendChild(h("button",{class:"btn",type:"button",text:"Add my wishes",on:{click:function(){go(STEPS.map(function(x){return x.id;}).indexOf("wishes"));}}}));
+  var b=h("button",{class:"btn go",type:"button",text:"Send my file",on:{click:function(){
+    b.disabled=true;b.textContent="Sending";err.classList.add("hidden");
+    clearTimeout(timer);P.submitted=true;
+    var job=S.drawDirty?api.kidSaveDrawing(S.code,S.name,S.draw).then(function(){S.drawDirty=false;}):Promise.resolve();
+    job.then(function(){return api.kidSave(S.code,S.name,P);}).then(function(){done();},function(){
+      b.disabled=false;b.textContent="Send my file";err.textContent="Your file didn't send. Check your Wi-Fi, then tap Send my file again.";err.classList.remove("hidden");
+    });
+  }}});
+  pane.appendChild(err);pane.appendChild(b);
+}
+function done(){
+  var stage=frame.stage;clear(stage);clear(frame.foot);confetti(140);
+  var star=svg(STAR);star.setAttribute("width","110");star.setAttribute("height","110");
+  stage.appendChild(h("div",{class:"pane in"},star,
+    h("h2",{text:"File sent, "+S.name+"!"}),
+    h("p",{class:"lead",text:"Your aunts and uncles can read it now. Thought of something else? Come back any time with the same name and code."}),
+    h("button",{class:"btn",type:"button",text:"Change my answers",on:{click:function(){S.i=0;render(-1);}}})));
+}
+
+/* ---------- Grown-up board ---------- */
+var A={code:"",who:"",kids:[]};
+function lsGet(k){try{return localStorage.getItem(k)||"";}catch(e){return "";}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function adultFrame(title,right){
+  document.body.className="adult";clear(root);
+  var wrap=h("div",{class:"wrap"});
+  root.appendChild(h("div",{class:"board"},h("div",{class:"bar"},h("div",{class:"in"},h("h1",{text:title}),right)),wrap));
+  return wrap;
+}
+function adultGate(msg){
+  var wrap=adultFrame("Grown-ups only",h("button",{class:"ghost",type:"button",text:"Back to kids",on:{click:function(){welcome();}}}));
+  var whoId=nid(),codeId=nid();
+  var who=h("input",{id:whoId,autocomplete:"off",maxlength:"40",placeholder:"Aunt Jo",value:A.who||lsGet("wf_who")});
+  var code=h("input",{id:codeId,type:"password",autocomplete:"off"});
+  var err=h("div",{class:"err "+(typeof msg==="string"?"":"hidden"),role:"alert",text:typeof msg==="string"?msg:""});
+  var go=h("button",{class:"savebtn",type:"submit",text:"Open the board"});
+  var form=h("form",{class:"sec",on:{submit:function(e){
+    e.preventDefault();
+    var w=clean(who.value),c=clean(code.value);
+    if(!w||!c){err.textContent="Enter your name and the grown-up code.";err.classList.remove("hidden");return;}
+    go.disabled=true;go.textContent="Opening";
+    api.adultLoad(c).then(function(r){A.code=c;A.who=w;lsSet("wf_who",w);A.kids=r.kids;board();},function(e){go.disabled=false;go.textContent="Open the board";err.textContent=e.message;err.classList.remove("hidden");});
+  }}},
+    h("h3",{text:"See every kid's file and call dibs on gifts"}),
+    h("div",{class:"adultfield"},h("label",{for:whoId,text:"Your name, as the family knows you"}),who),
+    h("div",{class:"adultfield"},h("label",{for:codeId,text:"Grown-up code"}),code),
+    !live&&h("p",{class:"savemsg",text:"Preview: any code works. The two kids here are made up."}),
+    err,go);
+  who.style.cssText=code.style.cssText="min-height:48px;border:2px solid #14123A;border-radius:10px;padding:9px 11px;font-size:16px";
+  wrap.appendChild(form);
+}
+function colorOf(p){var n=p.colors&&p.colors.fav,c=COLORS.filter(function(x){return x[0]===n;})[0];return c?c[1]:"#CBD0F2";}
+function refresh(then){api.adultLoad(A.code).then(function(r){A.kids=r.kids;then();},function(e){adultGate(e.message);});}
+function board(){
+  var wrap=adultFrame("The Wish Files",h("button",{class:"ghost",type:"button",text:"Refresh",on:{click:function(){refresh(board);}}}));
+  if(!A.kids.length){wrap.appendChild(h("p",{class:"empty",text:"No files yet. Send the kids the link and the family code."}));return;}
+  A.kids.slice().sort(function(a,b){return a.profile.name.localeCompare(b.profile.name);}).forEach(function(k){
+    var p=k.profile,total=wishNums(p).length,taken=k.adult.claims.filter(function(c){return /^w\d+$/.test(c.item)&&p.wishes&&clean(p.wishes[c.item]);}).length;
+    wrap.appendChild(h("button",{class:"kidrow",type:"button",on:{click:function(){detail(k.key);}}},
+      h("span",{class:"dot",style:"background:"+colorOf(p)}),
+      h("span",{},h("strong",{text:p.name}),h("small",{text:(p.about&&p.about.age?"Age "+p.about.age+". ":"")+taken+" of "+total+" wishes claimed"})),
+      h("span",{class:"pill"+(p.submitted?" done":""),text:p.submitted?"Sent":"Working on it"})));
+  });
+}
+function kv(sec,l,v){if(!clean(v))return false;sec.appendChild(h("div",{class:"kv"},h("span",{text:l}),h("div",{text:v})));return true;}
+function section(t,cls){return h("div",{class:"sec"+(cls?" "+cls:"")},h("h3",{text:t}));}
+function detail(key){
+  var k=A.kids.filter(function(x){return x.key===key;})[0];if(!k)return board();
+  var p=k.profile,ad=k.adult,board_=adultFrame(p.name,h("button",{class:"ghost",type:"button",text:"All kids",on:{click:function(){refresh(board);}}}));
+  ad.notes=ad.notes||{};
+  function claimOf(item){return ad.claims.filter(function(c){return c.item===item;})[0];}
+  function update(job){job.then(function(r){k.adult=r.adult;detail(key);},function(e){A.flash=e.message;refresh(function(){detail(key);});});}
+  var toast=h("div",{class:"err hidden",role:"alert"});
+  function dib(item,what){
+    var c=claimOf(item);
+    if(!c)return h("button",{class:"dib",type:"button",text:"Call dibs",on:{click:function(){update(api.adultClaim(A.code,key,{who:A.who,item:item,what:what}));}}});
+    if(c.who===A.who)return h("button",{class:"dib mine",type:"button",text:"You've got this. Tap to release",on:{click:function(){update(api.adultRelease(A.code,key,c.id));}}});
+    return h("div",{class:"dib taken",style:"display:flex;align-items:center",text:c.who+" has this"});
+  }
+  var bits_=[];if(p.about&&p.about.age)bits_.push("Age "+p.about.age);
+  board_.appendChild(h("div",{class:"hero"},h("span",{class:"dot",style:"background:"+colorOf(p)+";width:58px;height:58px"}),h("div",{},h("h2",{text:p.name}),h("p",{text:bits_.join(". ")+(p.submitted?"":" Still working on it.")}))));
+  if(A.flash){toast.textContent=A.flash;toast.classList.remove("hidden");A.flash="";}
+  board_.appendChild(toast);
+
+  var w=section("Wishes"),any=false;
+  wishNums(p).forEach(function(n,ix){var t=clean(p.wishes["w"+n]);any=true;
+    w.appendChild(h("div",{class:"gift"},h("div",{class:"t",text:(ix+1)+". "+t}),clean(p.wishes["d"+n])?h("div",{class:"d",text:p.wishes["d"+n]}):null,dib("w"+n,t)));});
+  if(!any)w.appendChild(h("p",{class:"savemsg",text:"No wishes listed yet."}));
+  board_.appendChild(w);
+
+  var wants=Object.keys(p.have||{}).filter(function(i){return p.have[i].want;});
+  if(wants.length){var ws=section("Would love one");wants.forEach(function(i){var t=i+(clean(p.have[i].kind)?": "+p.have[i].kind:"");ws.appendChild(h("div",{class:"gift"},h("div",{class:"t",text:t}),dib("have:"+i,t)));});board_.appendChild(ws);}
+
+  var cl=section("Gifts the family is covering");
+  ad.claims.forEach(function(c){var row=h("div",{class:"gift"},h("div",{class:"t",text:c.what}),h("div",{class:"d",text:c.who}));if(c.who===A.who)row.appendChild(h("button",{class:"dib mine",type:"button",text:"Release",on:{click:function(){update(api.adultRelease(A.code,key,c.id));}}}));cl.appendChild(row);});
+  var idea=h("input",{"aria-label":"Another gift you're getting",maxlength:"200",placeholder:"I'm getting something else..."});
+  cl.appendChild(h("form",{class:"row",on:{submit:function(e){e.preventDefault();var v=clean(idea.value);if(v)update(api.adultClaim(A.code,key,{who:A.who,item:"idea",what:v}));}}},idea,h("button",{type:"submit",text:"Add"})));
+  board_.appendChild(cl);
+
+  var stop=section("Before you buy","stop"),has=false,L=p.limits||{},St=p.stash||{},N=ad.notes,T=p.treats||{};
+  [["Parents say skip",N.skip],["Already bought by parents",N.bought],["Has lots of",St.lots],["Has to wait for",L.wait],["Never really used",L.neverUsed],["Foods to avoid",T.avoid||L.foods],["Candy they don't like",T.candyNo],["Shelf space",p.vibe&&p.vibe.shelves]].forEach(function(r){if(kv(stop,r[0],r[1]))has=true;});
+  var owned=Object.keys(p.have||{}).filter(function(i){return p.have[i].has;}).map(function(i){return i+(clean(p.have[i].kind)&&!p.have[i].want?" ("+p.have[i].kind+")":"");});
+  if(owned.length){kv(stop,"Already has",owned.join(", "));has=true;}
+  if(has)board_.appendChild(stop);
+
+  var sz=section("Sizes"),hs=false;
+  ((STEPS.filter(function(s){return s.id==="sizes";})[0]).fields).forEach(function(f){if(kv(sz,f.label,getFrom(p,"sizes",f.k)))hs=true;});
+  if(kv(sz,"Parent's size notes",N.sizes))hs=true;
+  if(hs)board_.appendChild(sz);
+
+  if(p.colors&&(p.colors.fav||p.colors.second||p.colors.nope)||(p.interests&&p.interests.length)){
+    var who_=section("What they're into");
+    var cs=h("div",{class:"colors"});
+    [["fav","Favorite"],["second","Second"],["nope","Not this"]].forEach(function(c){var n=p.colors&&p.colors[c[0]];if(!n)return;var col=COLORS.filter(function(x){return x[0]===n;})[0];cs.appendChild(h("div",{},h("i",{style:"background:"+col[1]}),c[1]+": "+n));});
+    who_.appendChild(cs);
+    if(p.interests&&p.interests.length){var ch=h("div",{class:"chiplist"});p.interests.forEach(function(t){ch.appendChild(h("b",{text:t}));});who_.appendChild(ch);}
+    board_.appendChild(who_);
+  }
+  var tt=Object.keys(p.tt||{}).map(function(n){return p.tt[n];});
+  var more=section("More clues"),hm=false;
+  if(tt.length&&kv(more,"This or that",tt.join(", ")))hm=true;
+  [["about","codeName","Secret agent name"],["about","threeWords","3 words"],["about","dreamJob","Wants to be"],["fun","superpower","Superpower"],["fun","snowDay","Best snow day"],["fun","sidekick","Sidekick"],["fun","hundred","Would spend $100 on"],["fun","themeSong","Walk-out song"],["vibe","roomVibe","Room vibe"],["vibe","saturday","Free Saturday"],["stash","collect","Collects and still missing"],["stash","outgrew","Outgrew or broke and misses"],["stash","almostOut","Almost out of"],["limits","saving","Saving up for"],["limits","bestGift","Best gift ever"],["extras","funDay","Fun day with you"],["extras","giftCard","Gift card"],["extras","kindness","Would love to give someone"]].forEach(function(r){if(kv(more,r[2],getFrom(p,r[0],r[1])))hm=true;});
+  if(hm)board_.appendChild(more);
+
+  STEPS.filter(function(s){return (s.ch===1||s.id==="food")&&s.group;}).forEach(function(s){
+    var sec=section(s.title),got=false;
+    s.fields.forEach(function(f){if(kv(sec,f.label,getFrom(p,s.group,f.k)))got=true;});
+    if(got)board_.appendChild(sec);
+  });
+  if(/^data:image\/(jpeg|png);base64,/.test(k.drawing||"")){board_.appendChild(h("div",{class:"sec"},h("h3",{text:"Dream gift drawing"}),h("img",{class:"draw",alt:p.name+"'s drawing of a dream gift",src:k.drawing})));}
+
+  var notes=section("Notes from parents");
+  notes.appendChild(h("p",{class:"savemsg",text:"Only grown-ups see this."}));
+  var boxes={};
+  [["skip","Please skip"],["bought","Already bought by us"],["sizes","Size notes"],["reach","Best way to reach us"]].forEach(function(r){
+    var id=nid();boxes[r[0]]=h("textarea",{id:id,maxlength:"800"});boxes[r[0]].value=N[r[0]]||"";
+    notes.appendChild(h("div",{class:"adultfield"},h("label",{for:id,text:r[1]}),boxes[r[0]]));
+  });
+  var msg=h("span",{class:"savemsg"});
+  var sv=h("button",{class:"savebtn",type:"button",text:"Save notes",on:{click:function(){
+    var o={};Object.keys(boxes).forEach(function(n){o[n]=boxes[n].value;});
+    sv.disabled=true;msg.textContent="Saving";
+    api.adultNotes(A.code,key,o).then(function(r){k.adult=r.adult;detail(key);},function(e){sv.disabled=false;msg.textContent=e.message;});
+  }}});
+  notes.appendChild(h("div",{class:"row",style:"align-items:center"},sv,msg));
+  board_.appendChild(notes);
+}
+function getFrom(p,g,k){return p[g]&&p[g][k]||"";}
+
+welcome();
+api.info().then(function(r){if(r.deadline){DEADLINE=r.deadline;if(!S.name&&!document.body.className&&document.querySelector(".welcome .lead")){var l=document.querySelector(".welcome .lead");l.parentNode.insertBefore(h("div",{class:"note",text:"Finish by "+DEADLINE}),l.nextSibling);}}},function(){});
+})();
+</script>
+</body>
+</html>
