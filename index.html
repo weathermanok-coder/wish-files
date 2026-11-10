@@ -74,11 +74,12 @@ textarea.in-box{min-height:92px;resize:vertical}
 
 /* Have / want */
 .haves{display:flex;flex-direction:column;gap:10px}
-.have{background:rgba(255,253,247,.14);border-radius:14px;padding:10px 12px;display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
-.have strong{font-weight:600}
-.have button{min-height:46px;min-width:68px;border:3px solid var(--ink);border-radius:10px;background:var(--snow);font-weight:800;font-size:15px}
+.have{background:rgba(255,253,247,.14);border-radius:14px;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:center}
+.have strong{font-weight:600;grid-column:1/-1}
+.have button{min-height:46px;min-width:0;border:3px solid var(--ink);border-radius:10px;background:var(--snow);font-weight:800;font-size:15px}
 .have button.has{background:var(--mint)}
 .have button.want{background:var(--sun)}
+.have button.no{background:var(--flare);color:var(--snow)}
 .have input{grid-column:1/-1;min-height:46px;font-size:16px}
 
 /* This or that */
@@ -284,7 +285,7 @@ var STEPS=[
  {id:"animals",ch:1,title:"Animals and nature",group:"animals",fields:[
    {k:"animal",label:"Favorite animal"},{k:"pets",label:"Pets you have (and their names)"},
    {k:"petWish",label:"Pet you wish you had"},{k:"season",label:"Favorite season or outdoor spot"}]},
- {id:"have",ch:2,type:"have",title:"Have it or want it?",sub:"Tap both if you have one and want a new one. This stops double gifts."},
+ {id:"have",ch:2,type:"have",title:"Have it or want it?",sub:"Tap Have, Want or No thanks. Have one and want a new one? Tap both."},
  {id:"stash",ch:2,title:"Your stash",group:"stash",fields:[
    {k:"collect",label:"I collect... (and I'm still missing)",type:"area",ph:"Cards, figures, rocks, sets with numbers"},
    {k:"lots",label:"I already have LOTS of...",type:"area",ph:"No more of these, please!"},
@@ -321,7 +322,7 @@ function gs(fn){
 }
 var mock=live?null:(function(){
   var kids={
-   juniper:{name:"Juniper",submitted:true,updatedAt:Date.now(),about:{age:"9",codeName:"Agent Panda",threeWords:"loud, kind, sneaky",dreamJob:"Zookeeper"},fun:{superpower:"Talk to animals",snowDay:"Sledding",sidekick:"A red panda named Rusty",hundred:"Fancy markers and a hamster tunnel"},vibe:{roomVibe:"Jungle treehouse",shelves:"Some",saturday:"Building forts with my brother"},sizes:{shirt:"10/12",pants:"10 slim",shoes:"3 youth",hoodie:"M",clothes:"Only fun ones"},interests:["Building","Animals","Art & crafts","Magic tricks"],colors:{fav:"Teal",second:"Orange",nope:"Brown"},books:{series:"Sample Dragon Academy",bookNum:"4",author:"Sample Author"},treats:{candy:"Sour gummy worms",candyNo:"Black licorice",sweetSalty:"Both!",drink:"Hot cocoa",avoid:"Peanuts"},games:{video:"Sample Farm Quest",system:"Tablet",board:"Sample Card Battle"},animals:{animal:"Red panda",pets:"Biscuit (hamster)",petWish:"A real red panda"},have:{Tablet:{has:true,kind:""},Bike:{has:true,want:true,kind:"Teal, 24 inch"},"Art supplies kit":{want:true,kind:"Alcohol markers"}},stash:{collect:"Enamel pins, missing the axolotl",lots:"Stuffed animals",almostOut:"Sketchbooks"},limits:{saving:"A telescope",wait:"A phone",bestGift:"Rock tumbler",x:""},wishes:{w1:"Rock tumbler refill kit",d1:"Any brand with polishing grit, 3 lb",w2:"Red panda hoodie",d2:"Size M, zip front",w3:"Magic trick set",w4:"Glow-in-the-dark stars",d4:"The kind that stick to the ceiling"},tt:{"0":"Build it myself","1":"Outside fun","4":"Surprise me"},extras:{funDay:"Bowling and tacos",giftCard:"Bookstore",kindness:"A cozy blanket for my grandpa"}},
+   juniper:{name:"Juniper",submitted:true,updatedAt:Date.now(),about:{age:"9",codeName:"Agent Panda",threeWords:"loud, kind, sneaky",dreamJob:"Zookeeper"},fun:{superpower:"Talk to animals",snowDay:"Sledding",sidekick:"A red panda named Rusty",hundred:"Fancy markers and a hamster tunnel"},vibe:{roomVibe:"Jungle treehouse",shelves:"Some",saturday:"Building forts with my brother"},sizes:{shirt:"10/12",pants:"10 slim",shoes:"3 youth",hoodie:"M",clothes:"Only fun ones"},interests:["Building","Animals","Art & crafts","Magic tricks"],colors:{fav:"Teal",second:"Orange",nope:"Brown"},books:{series:"Sample Dragon Academy",bookNum:"4",author:"Sample Author"},treats:{candy:"Sour gummy worms",candyNo:"Black licorice",sweetSalty:"Both!",drink:"Hot cocoa",avoid:"Peanuts"},games:{video:"Sample Farm Quest",system:"Tablet",board:"Sample Card Battle"},animals:{animal:"Red panda",pets:"Biscuit (hamster)",petWish:"A real red panda"},have:{Tablet:{has:true,kind:""},Bike:{has:true,want:true,kind:"Teal, 24 inch"},"Art supplies kit":{want:true,kind:"Alcohol markers"},"Kid watch":{no:true},"Scooter or skates":{no:true}},stash:{collect:"Enamel pins, missing the axolotl",lots:"Stuffed animals",almostOut:"Sketchbooks"},limits:{saving:"A telescope",wait:"A phone",bestGift:"Rock tumbler",x:""},wishes:{w1:"Rock tumbler refill kit",d1:"Any brand with polishing grit, 3 lb",w2:"Red panda hoodie",d2:"Size M, zip front",w3:"Magic trick set",w4:"Glow-in-the-dark stars",d4:"The kind that stick to the ceiling"},tt:{"0":"Build it myself","1":"Outside fun","4":"Surprise me"},extras:{funDay:"Bowling and tacos",giftCard:"Bookstore",kindness:"A cozy blanket for my grandpa"}},
    theo:{name:"Theo",submitted:false,updatedAt:Date.now(),about:{age:"12"},sizes:{shirt:"Adult S",shoes:"7"},interests:["Video games","Robots & coding","Sports"],colors:{fav:"Black"},games:{video:"Sample Space Racer",system:"PC"},have:{Headphones:{want:true,kind:"Wireless, black"}},wishes:{w1:"Mechanical keyboard",d1:"Compact, quiet switches"}}
   };
   var draws={},adult={juniper:{notes:{bought:"Rock tumbler is covered"},claims:[{id:"c1",who:"Uncle Ray",item:"w2",what:"Red panda hoodie"}]},theo:{notes:{},claims:[]}};
@@ -519,7 +520,7 @@ function stepEmpty(){
   var s=STEPS[S.i];
   if(s.type==="send"||s.type==="draw")return s.type==="draw"&&!S.draw;
   if(s.type==="colors")return !P.colors||!(P.colors.fav||P.colors.second||P.colors.nope);
-  if(s.type==="have")return !P.have||!Object.keys(P.have).some(function(k){var x=P.have[k];return x.has||x.want;});
+  if(s.type==="have")return !P.have||!Object.keys(P.have).some(function(k){var x=P.have[k];return x.has||x.want||x.no;});
   if(s.type==="tt")return !P.tt||!Object.keys(P.tt).length;
   if(s.type==="wishes")return !P.wishes||!Object.keys(P.wishes).some(function(k){return clean(P.wishes[k]);});
   var any=(s.fields||[]).some(function(f){return clean(getV(s.group,f.k));});
@@ -632,10 +633,11 @@ function have(pane){
   HAVES.forEach(function(item){
     var r=P.have[item]=P.have[item]||{has:false,want:false,kind:""};
     var input=h("input",{class:"in-box","aria-label":"Which kind or color of "+item,maxlength:"200",placeholder:"Which kind or color?",value:r.kind||"",on:{input:function(e){r.kind=e.target.value;touched();}}});
-    function sync(){input.classList.toggle("hidden",!(r.has||r.want));a.className=r.has?"has":"";b.className=r.want?"want":"";a.setAttribute("aria-pressed",String(!!r.has));b.setAttribute("aria-pressed",String(!!r.want));nextLabel();}
+    function sync(){input.classList.toggle("hidden",!(r.has||r.want));a.className=r.has?"has":"";b.className=r.want?"want":"";c.className=r.no?"no":"";a.setAttribute("aria-pressed",String(!!r.has));b.setAttribute("aria-pressed",String(!!r.want));c.setAttribute("aria-pressed",String(!!r.no));nextLabel();}
     var a=h("button",{type:"button","aria-label":"I have "+item,text:"Have",on:{click:function(){r.has=!r.has;sync();touched();}}});
-    var b=h("button",{type:"button","aria-label":"I want "+item,text:"Want",on:{click:function(){r.want=!r.want;sync();touched();}}});
-    list.appendChild(h("div",{class:"have"},h("strong",{text:item}),a,b,input));
+    var b=h("button",{type:"button","aria-label":"I want "+item,text:"Want",on:{click:function(){r.want=!r.want;if(r.want)r.no=false;sync();touched();}}});
+    var c=h("button",{type:"button","aria-label":"No thanks to "+item,text:"No thanks",on:{click:function(){r.no=!r.no;if(r.no)r.want=false;sync();touched();}}});
+    list.appendChild(h("div",{class:"have"},h("strong",{text:item}),a,b,c,input));
     sync();
   });
   pane.appendChild(list);
@@ -804,6 +806,8 @@ function detail(key){
   [["Parents say skip",N.skip],["Already bought by parents",N.bought],["Has lots of",St.lots],["Has to wait for",L.wait],["Never really used",L.neverUsed],["Foods to avoid",T.avoid||L.foods],["Candy they don't like",T.candyNo],["Shelf space",p.vibe&&p.vibe.shelves]].forEach(function(r){if(kv(stop,r[0],r[1]))has=true;});
   var owned=Object.keys(p.have||{}).filter(function(i){return p.have[i].has;}).map(function(i){return i+(clean(p.have[i].kind)&&!p.have[i].want?" ("+p.have[i].kind+")":"");});
   if(owned.length){kv(stop,"Already has",owned.join(", "));has=true;}
+  var nope=Object.keys(p.have||{}).filter(function(i){return p.have[i].no;});
+  if(nope.length){kv(stop,"No thanks to",nope.join(", "));has=true;}
   if(has)board_.appendChild(stop);
 
   var sz=section("Sizes"),hs=false;
