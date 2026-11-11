@@ -173,6 +173,10 @@ body.adult #fx{display:none}
 .gift{display:flex;flex-direction:column;gap:6px;border-top:1px solid #E7E9FA;padding-top:10px}
 .gift:first-of-type{border-top:0;padding-top:0}
 .gift .t{font-weight:800;font-size:18px;overflow-wrap:anywhere}
+.gift.stock{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}
+.gift.stock .t{font-size:16px;flex:1 1 140px}
+.gift.stock .d{flex-basis:100%;order:2}
+.gift.stock .dib{order:1}
 .gift .d{color:var(--muted);font-size:15px;overflow-wrap:anywhere}
 .dib{align-self:flex-start;min-height:44px;padding:0 14px;border:2px solid var(--ink);border-radius:10px;background:var(--sun);font-weight:800;font-size:15px}
 .dib.taken{background:#E3E5FA;border-color:transparent;cursor:default}
@@ -813,8 +817,8 @@ function detail(key){
   var Sk=p.stocking||{};
   if((Sk.picks&&Sk.picks.length)||clean(Sk.ideas)){
     var sk=section("Stocking stuffers");
-    if(Sk.picks&&Sk.picks.length){var cl_=h("div",{class:"chiplist"});Sk.picks.forEach(function(t){cl_.appendChild(h("b",{text:t}));});sk.appendChild(cl_);}
-    kv(sk,"Other ideas",Sk.ideas);
+    (Sk.picks||[]).forEach(function(t){sk.appendChild(h("div",{class:"gift stock"},h("div",{class:"t",text:t}),dib("stock:"+t,"Stocking: "+t)));});
+    if(clean(Sk.ideas))sk.appendChild(h("div",{class:"gift stock"},h("div",{class:"t",text:"Other ideas"}),h("div",{class:"d",text:Sk.ideas}),dib("stock:ideas","Stocking: "+clean(Sk.ideas).slice(0,120))));
     board_.appendChild(sk);
   }
 
